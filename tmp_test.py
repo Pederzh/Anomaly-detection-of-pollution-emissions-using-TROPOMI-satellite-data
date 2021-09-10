@@ -1,5 +1,10 @@
+import base64
+
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
+from PIL import Image
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 # Your client credentials
 client_id = '982de4f4-dade-4f98-9b49-4374cd896bb6'
@@ -14,22 +19,23 @@ token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/tok
                           client_id=client_id, client_secret=client_secret)
 
 # All requests using this session will have an access token automatically added
-response = oauth.post('https://creodias.sentinel-hub.com/api/v1/process',
-                      json={
-                          "input": {
-                              "bounds": {
-                                  "bbox": [
-                                      13.822174072265625,
-                                      45.85080395917834,
-                                      14.55963134765625,
-                                      46.29191774991382
-                                  ]
-                              },
-                              "data": [{
-                                  "type": "sentinel-2-l2a"
-                              }]
-                          },
-                          "evalscript": """
+response = oauth.post('https://services.sentinel-hub.com/api/v1/process',
+  headers={"Authorization" : "Bearer <your_access_token>"},
+  json={
+    "input": {
+        "bounds": {
+            "bbox": [
+                13.822174072265625,
+                45.85080395917834,
+                14.55963134765625,
+                46.29191774991382
+            ]
+        },
+        "data": [{
+            "type": "sentinel-2-l2a"
+        }]
+    },
+    "evalscript": """
     //VERSION=3
 
     function setup() {
@@ -53,4 +59,7 @@ response = oauth.post('https://creodias.sentinel-hub.com/api/v1/process',
     """
 })
 
-print(response.content)
+#print(response.content)
+plt.figure()
+plt.imshow(response.content)
+plt.show()
