@@ -3,6 +3,7 @@ import io
 import matplotlib.pyplot as plt
 
 from PIL import Image, ImageTk
+from numpy import array
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
@@ -68,7 +69,7 @@ responseS2 = oauth.post('https://creodias.sentinel-hub.com/api/v1/process',
 
 # GETTING THE IMAGES FORM TROPOMI
 response_list = []
-range_ = 10
+range_ = 2
 for tmp in range(range_):
     x = tmp+1
     day_from = "" + str(x)
@@ -141,15 +142,32 @@ im = Image.open(in_memory_file)
 im.show()
 """
 
+def get_smooth_transaction(img_start, img_end, n_imgs):
+    m_start = array(img_start)
+    m_end = array(img_end)
+    m_list = [array(img_start)]
+    for n_img in range(n_imgs-1):
+        m_list.append(array(img_start))
+    for y in range(len(m_start)):
+        for x in range(len(m_start[y])):
+            for z in range(len(m_start[y][x])):
+                for n_img in range(n_imgs):
+                    m_list[n_img][y][x][z] = m_start[y][x][z]*(n_img+1)/(n_imgs+1) + m_end[y][x][z]*(1-(n_img+1)/(n_imgs+1))
+    img_list = [Image.fromarray(m_end, 'RGBA')]
+    for tmp in range(len(m_list)):
+        img_list.append(Image.fromarray(m_list[tmp], 'RGBA'))
+    img_list.append(Image.fromarray(m_start, 'RGBA'))
+    return img_list
+
 in_memory_file = io.BytesIO(responseS2.content)
 imgS2 = Image.open(in_memory_file)
-list_imgS5 = []
+imgsS5 = []
 for x in range(range_):
     in_memory_file = io.BytesIO(response_list[x])
-    list_imgS5.append(Image.open(in_memory_file))
-    list_imgS5[x].putalpha(150)
-print(list_imgS5)
-
+    imgsS5.append(Image.open(in_memory_file))
+    #list_imgS5[x].putalpha(150)
+list_imgS5 = get_smooth_transaction(imgsS5[0], imgsS5[1], 10)
+range_ = range_+10
 
 """ PANEL GRAPICH """
 
@@ -172,10 +190,7 @@ panel = Label(root, image = img_displayed)
 panel.image = img_displayed
 panel.pack(side = "right", fill = "both", expand = "yes")
 
-# creating the S2 image
-img_displayed = ImageTk.PhotoImage(imgS2)
-panelS2 = Label(root, image = img_displayed)
-panelS2.pack(side = "left", fill = "both", expand = "yes")
+
 
 # creating a scroll-bar
 my_scrollbar = ttk.Scrollbar(main_frame, orient=VERTICAL, command=my_canvas.yview)
