@@ -21,13 +21,10 @@ oauth = OAuth2Session(client=client)
 token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/token',
                           client_id=client_id, client_secret=client_secret)
 
-bbox_coordinates = [ 13.822174072265625,
-                                      45.85080395917834,
-                                      14.55963134765625,
-                                      46.29191774991382 ]
+bbox_coordinates = [ -170.843537, 65.396336, -167.621972, 66.229890]
 class Time_ranged:
-    from_ = "2020-09-05T00:00:00Z"
-    to_ = "2020-09-06T00:00:00Z"
+    from_ = "2021-08-04T00:00:00Z"
+    to_ = "2021-08-06T00:00:00Z"
     year_ = "2019"
     month_ = "09"
 
@@ -68,7 +65,7 @@ responseS2 = oauth.post('https://creodias.sentinel-hub.com/api/v1/process',
 
 # GETTING THE IMAGES FORM TROPOMI
 response_list = []
-range_ = 10
+range_ = 5
 for tmp in range(range_):
     x = tmp+1
     day_from = "" + str(x)
@@ -147,7 +144,6 @@ list_imgS5 = []
 for x in range(range_):
     in_memory_file = io.BytesIO(response_list[x])
     list_imgS5.append(Image.open(in_memory_file))
-    list_imgS5[x].putalpha(150)
 print(list_imgS5)
 
 
