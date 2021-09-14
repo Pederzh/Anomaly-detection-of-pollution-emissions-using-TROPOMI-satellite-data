@@ -145,16 +145,17 @@ def get_response (bbox, date_from_str, date_to_str, s_product):
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # product selected (NO2, CO, CH4)
-product_type = "CO"
+product_type = "NO2"
 
 # area coordinates
-bbox_coordinates = [ -170.844, 65.396, -167.622, 66.230]
-location_name = "Bering Strait"
+bbox_coordinates = [ 71.779, 71.138, 72.683, 71.374]
+location_name = "Bering Strait" # [ -170.844, 65.396, -167.622, 66.230]
+location_name = "Sabetta Port" # [ 71.779, 71.138, 72.683, 71.374]
 
 # time window considered
 date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2020, month=2, day=15, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2019, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 # time range for the sampling period
 time_sp = 1 # in days
@@ -190,4 +191,4 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     # SAVING THE RESPONSE CONTENT AS AN IMAGE
     in_memory_file = io.BytesIO(response.content)
     images.append(Image.open(in_memory_file))
-    images[day_counter].save("./Images/" + product_type + "/" + date_from_str + " "+location_name+".png", format="png")
+    images[day_counter].save("./Images/" + location_name + "/" + product_type + "/" + date_from_str + " "+location_name+".png", format="png")
