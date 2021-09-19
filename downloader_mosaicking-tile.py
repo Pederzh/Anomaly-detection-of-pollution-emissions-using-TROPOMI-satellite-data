@@ -37,7 +37,7 @@ def get_response (bbox, date_from_str, date_to_str, mosaicking, dimension):
                         return {
                             input: ["NO2", "dataMask"],
                                 output: { bands:  4},
-                                mosaicking: "TILE"
+                                mosaicking: "ORBIT"
                             }
                         }                                    
                     const minVal = 0.0
@@ -52,10 +52,18 @@ def get_response (bbox, date_from_str, date_to_str, mosaicking, dimension):
                         [maxVal, [0.5, 0, 0]]
                     ]
                     const viz = new ColorRampVisualizer(rainbowColors)
-                    function evaluatePixel(sample) {
-                        var rgba= viz.process(sample.NO2)
-                        rgba.push(sample.dataMask)
-                        return rgba
+                    
+                    function evaluatePixel(samples){
+                      var sum = 0;
+                      var nonZeroSamples = 0;
+                      for (var i = 0; i < samples.length; i++) {
+                        var value = samples[i].NO2;
+                        if (value != 0) {
+                          sum += value;
+                          nonZeroSamples++;
+                        }
+                      }
+                      return viz.process(samples[0].NO2);
                     }
                     """
     if mosaicking == "SIMPLE":
@@ -168,11 +176,19 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     if (date_to.day < 10): date_to_str += "0"
     date_to_str += str(date_to.day)
     print("calling for range   " + date_from_str + "    to    " + date_to_str)
+    # PRINT
+    fig = plt.figure()
     # SENDING POST REQUEST
     response = get_response(bbox_coordinates, date_from_str, date_to_str, "TILE", dimension)
-    print(response.content)
-    response = get_response(bbox_coordinates, date_from_str, date_to_str, "SIMPLE", dimension)
-    print(response.content)
+    in_memory_file = io.BytesIO(response.content)
+    img = Image.open(in_memory_file)
+    plt.imshow(img)
+    plt.show()
+    # response = get_response(bbox_coordinates, date_from_str, date_to_str, "SIMPLE", dimension)
+    # in_memory_file = io.BytesIO(response.content)
+    # img = Image.open(in_memory_file)
+    # plt.imshow(img)
+    # plt.show()
     # SAVING THE RESPONSE CONTENT AS AN IMAGE
     #in_memory_file = io.BytesIO(response.content)
     #images.append(Image.open(in_memory_file))
