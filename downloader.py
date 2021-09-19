@@ -28,7 +28,7 @@ token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/tok
 #             POST REQUEST FUNCTION
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-def get_response (bbox, date_from_str, date_to_str, s_product):
+def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
     if s_product == "CH4":
         product_evalscritp = """
                     //VERSION=3
@@ -62,7 +62,7 @@ def get_response (bbox, date_from_str, date_to_str, s_product):
                     function setup() {
                         return {
                             input: ["NO2", "dataMask"],
-                                output: { bands:  4}
+                                output: { bands:  4},
                             }
                         }                                    
                     const minVal = 0.0
@@ -134,6 +134,7 @@ def get_response (bbox, date_from_str, date_to_str, s_product):
                   }
               ]
           },
+          "output": dimension,
           "evalscript": product_evalscritp
         })
     return response
@@ -148,14 +149,19 @@ def get_response (bbox, date_from_str, date_to_str, s_product):
 product_type = "NO2"
 
 # area coordinates
-bbox_coordinates = [ 71.779, 71.138, 72.683, 71.374]
+bbox_coordinates = [ -170.844, 65.396, -167.622, 66.230]
 location_name = "Bering Strait" # [ -170.844, 65.396, -167.622, 66.230]
-location_name = "Sabetta Port" # [ 71.779, 71.138, 72.683, 71.374]
+#location_name = "Sabetta Port" # [ 71.779, 71.138, 72.683, 71.374]
+#location_name = "Russia & Arctic" # [36.055, 35.531, -178.398, 81.025] [72.442, 54.825, 136.075 76.164]
+
+# image dimension
+dimension = { "width": 512, "height": 512 }
+#dimension = { "width": 1024, "height": 1024 }
 
 # time window considered
 date = datetime.datetime.now()
-date_start = date.replace(year=2019, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=8, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=8, day=5, hour=0, minute=0, second=0, microsecond=0)
 
 # time range for the sampling period
 time_sp = 1 # in days
@@ -187,7 +193,7 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     date_to_str += str(date_to.day)
     print("calling for range   " + date_from_str + "    to    " + date_to_str)
     # SENDING POST REQUEST
-    response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type)
+    response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type, dimension)
     # SAVING THE RESPONSE CONTENT AS AN IMAGE
     in_memory_file = io.BytesIO(response.content)
     images.append(Image.open(in_memory_file))
