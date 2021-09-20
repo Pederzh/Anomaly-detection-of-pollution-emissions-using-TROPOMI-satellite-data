@@ -36,10 +36,10 @@ def get_response (bbox, date_from_str, date_to_str, mosaicking, dimension):
                     function setup() {
                         return {
                             input: ["NO2", "dataMask"],
-                                output: { bands:  4},
-                                mosaicking: "ORBIT"
-                            }
-                        }                                    
+                            output: { bands:  4},
+                            mosaicking: "TILE"
+                        }
+                    }                                    
                     const minVal = 0.0
                     const maxVal = 0.0001
                     const diff = maxVal - minVal
@@ -54,16 +54,33 @@ def get_response (bbox, date_from_str, date_to_str, mosaicking, dimension):
                     const viz = new ColorRampVisualizer(rainbowColors)
                     
                     function evaluatePixel(samples){
-                      var sum = 0;
+                      var sumNO2 = 0;
+                      var sumMask = 0;
                       var nonZeroSamples = 0;
-                      for (var i = 0; i < samples.length; i++) {
-                        var value = samples[i].NO2;
-                        if (value != 0) {
-                          sum += value;
-                          nonZeroSamples++;
+                      var zeroSamples = 0;
+                      var sample = {}
+                      if (samples.length>1){
+                        for (var i = 0; i < samples.length; i++) {
+                            var value = samples[i];
+                            if (value.NO2 != 0) {
+                              sumNO2 += value.NO2;
+                              nonZeroSamples++;
+                            }
+                            if (value.dataMask != 0){
+                              sumMask += value.dataMask;
+                              zeroSamples++;
+                            }
                         }
                       }
-                      return viz.process(samples[0].NO2);
+                      else{
+                        nonZeroSamples = 1;
+                        zeroSamples = 1;
+                      }
+                      sample.NO2 = sumNO2 / nonZeroSamples
+                      sample.dataMask = sumMask / zeroSamples
+                      var rgba= viz.process(sample.NO2)
+                      rgba.push(sample.dataMask)
+                      return (rgba)
                     }
                     """
     if mosaicking == "SIMPLE":
@@ -144,11 +161,11 @@ dimension = { "width": 50, "height": 50 }
 
 # time window considered
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=8, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=8, day=2, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2019, month=7, day=27, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2019, month=7, day=29, hour=0, minute=0, second=0, microsecond=0)
 
 # time range for the sampling period
-time_sp = 1 # in days
+time_sp = 2 # in days
 
 
 
@@ -180,15 +197,16 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     fig = plt.figure()
     # SENDING POST REQUEST
     response = get_response(bbox_coordinates, date_from_str, date_to_str, "TILE", dimension)
+    print (response.content)
     in_memory_file = io.BytesIO(response.content)
     img = Image.open(in_memory_file)
     plt.imshow(img)
     plt.show()
-    # response = get_response(bbox_coordinates, date_from_str, date_to_str, "SIMPLE", dimension)
-    # in_memory_file = io.BytesIO(response.content)
-    # img = Image.open(in_memory_file)
-    # plt.imshow(img)
-    # plt.show()
+    response = get_response(bbox_coordinates, date_from_str, date_to_str, "SIMPLE", dimension)
+    in_memory_file = io.BytesIO(response.content)
+    img = Image.open(in_memory_file)
+    plt.imshow(img)
+    plt.show()
     # SAVING THE RESPONSE CONTENT AS AN IMAGE
     #in_memory_file = io.BytesIO(response.content)
     #images.append(Image.open(in_memory_file))
