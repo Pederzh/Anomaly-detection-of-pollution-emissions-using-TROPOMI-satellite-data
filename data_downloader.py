@@ -1,5 +1,6 @@
 import datetime
 import io
+import json
 import math
 
 import matplotlib.pyplot as plt
@@ -44,12 +45,8 @@ def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
                     const maxVal = 2000.0
                     const diff = maxVal - minVal
                     const rainbowColors = [
-                        [minVal, [0, 0, 0.5]],
-                        [minVal + 0.125 * diff, [0, 0, 1]],
-                        [minVal + 0.375 * diff, [0, 1, 1]],
-                        [minVal + 0.625 * diff, [1, 1, 0]],
-                        [minVal + 0.875 * diff, [1, 0, 0]],
-                        [maxVal, [0.5, 0, 0]]
+                        [minVal, [1, 1, 1]],
+                        [maxVal, [0, 0, 0]],
                     ]
                     const viz = new ColorRampVisualizer(rainbowColors)
                     function evaluatePixel(sample) {
@@ -71,12 +68,8 @@ def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
                     const maxVal = 0.0001
                     const diff = maxVal - minVal
                     const rainbowColors = [
-                        [minVal, [0, 0, 0.5]],
-                        [minVal + 0.125 * diff, [0, 0, 1]],
-                        [minVal + 0.375 * diff, [0, 1, 1]],
-                        [minVal + 0.625 * diff, [1, 1, 0]],
-                        [minVal + 0.875 * diff, [1, 0, 0]],
-                        [maxVal, [0.5, 0, 0]]
+                        [minVal, [1, 1, 1]],
+                        [maxVal, [0, 0, 0]],
                     ]
                     const viz = new ColorRampVisualizer(rainbowColors)
                     function evaluatePixel(sample) {
@@ -98,12 +91,8 @@ def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
                     const maxVal = 0.1
                     const diff = maxVal - minVal
                     const rainbowColors = [
-                        [minVal, [0, 0, 0.5]],
-                        [minVal + 0.125 * diff, [0, 0, 1]],
-                        [minVal + 0.375 * diff, [0, 1, 1]],
-                        [minVal + 0.625 * diff, [1, 1, 0]],
-                        [minVal + 0.875 * diff, [1, 0, 0]],
-                        [maxVal, [0.5, 0, 0]]
+                        [minVal, [1, 1, 1]],
+                        [maxVal, [0, 0, 0]],
                     ]
                     const viz = new ColorRampVisualizer(rainbowColors)
                     function evaluatePixel(sample) {
@@ -151,9 +140,7 @@ def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
 #               RGB to VALUE
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-
-def get_value( rgb, product_type ):
+def get_min_max_val(product_type):
     if product_type == "NO2":
         minVal = 0.0
         maxVal = 0.0001
@@ -163,28 +150,69 @@ def get_value( rgb, product_type ):
     if product_type == "CH4":
         minVal = 1600.0
         maxVal = 2000.0
-    diff = maxVal - minVal
+    return [minVal, maxVal]
+
+def get_rainbow_value( rgb, product_type ):
+    values = get_min_max_val(product_type)
+    diff = values[1] - values[0]
     # [0, 0, 0.5]
     if rgb[0] == 0 and rgb[1] == 0 and rgb[2] <= 128:
-        return minVal
+        return values[0]
     # [0, 0, 1]
     if rgb[0] == 0 and rgb[1] == 0:
-        return minVal + 0.125 * diff * (rgb[2]-128)/128
+        return values[0] + 0.125 * diff * (rgb[2]-128)/128
     # [0, 1, 1]
     if rgb[0] == 0:
         rangeVal = 0.375 - 0.125
-        return (minVal+0.125*diff) + rangeVal * diff * rgb[1]/255
+        return (values[0]+0.125*diff) + rangeVal * diff * rgb[1]/255
     # [1, 1, 0]
     if rgb[1] == 255:
         rangeVal = 0.625 - 0.375
-        return (minVal+0.375*diff) + rangeVal * diff * rgb[0]/255
+        return (values[0]+0.375*diff) + rangeVal * diff * rgb[0]/255
     # [1, 0, 0]
     if rgb[0] == 255 and rgb[1] >= 0:
         rangeVal = 0.875 - 0.625
-        return (minVal+0.625*diff) + rangeVal * diff * (255-rgb[1]-128)/255
+        return (values[0]+0.625*diff) + rangeVal * diff * (255-rgb[1]-128)/255
     # [0.5, 0, 0]
     rangeVal = 1.0 - 0.875
-    return (minVal+0.875*diff) + rangeVal * (2*128-rgb[2])/128
+    return (values[0]+0.875*diff) + rangeVal * (2*128-rgb[2])/128
+
+def get_bw_value( rgb, product_type ):
+    values = get_min_max_val(product_type)
+    diff = values[1] - values[0]
+    return values[0] + diff * (255-rgb[0])/255
+
+
+
+
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#              CREATING JSON ROW
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+def create_image_matrix(image_array, product_type):
+    image_matrix = [[]]
+    image_matrix.clear()
+    for y in range(len(image_array)):
+        image_matrix.append([])
+        for x in range(len(image_array[y])):
+            image_matrix[y].append(round(get_bw_value(image_array[y][x], product_type), 4))
+    return image_matrix
+
+def create_json_element(image_array, date, type):
+    values = create_image_matrix(image_array, type)
+    data_set = {
+        "date": date,
+        "values": values}
+    return data_set
+
+
+
+
+
+
+
 
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -208,11 +236,15 @@ dimension = { "width": n_pixel, "height": n_pixel}
 
 # time window considered
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=8, day=6, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=8, day=7, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2020, month=8, day=6, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=8, day=8, hour=0, minute=0, second=0, microsecond=0)
 
 # time range for the sampling period
 time_sp = 1 # in days
+
+
+
+
 
 
 
@@ -224,6 +256,21 @@ time_sp = 1 # in days
 images = []
 date_from = date_start
 date_to = date_start
+
+# initializing json data
+data_set = {
+        "date": [],
+        "values": [[]],
+        "info": {
+            "product_type": product_type,
+            "location_name": location_name,
+            "bbox": bbox_coordinates,
+            "image_dimension": dimension
+        }
+    }
+data_set["date"].clear()
+data_set["values"].clear()
+
 for day_counter in range(int((date_end-date_start).days/time_sp)):
     date_from = date_to
     date_to = date_to + datetime.timedelta(days=time_sp)
@@ -248,13 +295,14 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     fig = plt.figure()
     plt.imshow(img)
     plt.show()
-    print(img[0][0])
-    print(get_value(img[0][0], "CO"))
-    print(img[25][0])
-    print(get_value(img[25][0], "CO"))
-    print(img[15][15])
-    print(get_value(img[15][15], "CO"))
-    print(img[25][25])
-    print(get_value(img[25][25], "CO"))
-    print(img[0][25])
-    print(get_value(img[0][25], "CO"))
+
+    # adding the image to the json data
+    data_set["date"].append(date_from_str)
+    data_set["values"].append(create_image_matrix(img, product_type))
+    # converting data_set to json
+    #json_dump = json.dumps(data_set)
+    #print (json_dump)
+
+with open('data.txt', 'w') as outfile:
+    json.dump(data_set, outfile)
+
