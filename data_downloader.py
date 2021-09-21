@@ -152,8 +152,8 @@ def get_min_max_val(product_type):
         maxVal = 2000.0
     return [minVal, maxVal]
 
-def get_rainbow_value( rgb, product_type ):
-    values = get_min_max_val(product_type)
+def get_rainbow_value( rgb, precision ):
+    values = [0, precision]
     diff = values[1] - values[0]
     # [0, 0, 0.5]
     if rgb[0] == 0 and rgb[1] == 0 and rgb[2] <= 128:
@@ -177,10 +177,10 @@ def get_rainbow_value( rgb, product_type ):
     rangeVal = 1.0 - 0.875
     return (values[0]+0.875*diff) + rangeVal * (2*128-rgb[2])/128
 
-def get_bw_value( rgb, product_type ):
-    values = get_min_max_val(product_type)
+def get_bw_value( rgb, precision):
+    values = [0, precision]
     diff = values[1] - values[0]
-    return values[0] + diff * (255-rgb[0])/255
+    return int(values[0] + diff * (255-rgb[0])/255)
 
 
 
@@ -191,13 +191,14 @@ def get_bw_value( rgb, product_type ):
 #              CREATING JSON ROW
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-def create_image_matrix(image_array, product_type):
+def create_image_matrix(image_array, precision):
     image_matrix = [[]]
     image_matrix.clear()
     for y in range(len(image_array)):
         image_matrix.append([])
         for x in range(len(image_array[y])):
-            image_matrix[y].append(round(get_bw_value(image_array[y][x], product_type), 4))
+            if image_array[y][x][3] == 0: image_matrix[y].append(-1)
+            if image_array[y][x][3] != 0: image_matrix[y].append(get_bw_value(image_array[y][x], precision))
     return image_matrix
 
 def create_json_element(image_array, date, type):
@@ -220,7 +221,7 @@ def create_json_element(image_array, date, type):
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # product selected (NO2, CO, CH4)
-product_type = "CO"
+product_type = "NO2"
 
 # area coordinates
 bbox_coordinates = [ 71.779, 71.138, 72.683, 71.374]
@@ -236,14 +237,25 @@ dimension = { "width": n_pixel, "height": n_pixel}
 
 # time window considered
 date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=8, day=6, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=8, day=8, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2020, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+year = str(date_start.year)
 
 # time range for the sampling period
 time_sp = 1 # in days
 
+# values precision (values converted in %)
+precision = 10000
 
+# if want to save png and json
+save_png = True
+save_json = True
 
+# if the image to load is in a file
+read_from_file = False
+
+# directory path
+directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
 
 
@@ -258,18 +270,15 @@ date_from = date_start
 date_to = date_start
 
 # initializing json data
-data_set = {
-        "date": [],
-        "values": [[]],
-        "info": {
+info_set = {
             "product_type": product_type,
             "location_name": location_name,
             "bbox": bbox_coordinates,
-            "image_dimension": dimension
+            "image_dimension": dimension,
+            "min_max": get_min_max_val(product_type),
+            "precision": precision
         }
-    }
-data_set["date"].clear()
-data_set["values"].clear()
+data_set = {}
 
 for day_counter in range(int((date_end-date_start).days/time_sp)):
     date_from = date_to
@@ -287,22 +296,28 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     if (date_to.day < 10): date_to_str += "0"
     date_to_str += str(date_to.day)
     print("calling for range   " + date_from_str + "    to    " + date_to_str)
-    # SENDING POST REQUEST
-    response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type, dimension)
+    # GETTING THE IMAGE
+    if not read_from_file:
+        # FROM POST CALL
+        response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type, dimension)
+        in_memory_file = io.BytesIO(response.content)
+        img_png = Image.open(in_memory_file)
+    if read_from_file:
+        # FROM FILE
+        img_png = Image.open(directory_path + "Images/" + date_from_str + ".png")
     # SAVING THE RESPONSE CONTENT AS AN IMAGE
-    in_memory_file = io.BytesIO(response.content)
-    img = array(Image.open(in_memory_file))
-    fig = plt.figure()
-    plt.imshow(img)
-    plt.show()
+    img = array(img_png)
+    # SAVING PNG IMAGE
+    if save_png:
+        img_png.save(directory_path + "Images/" + date_from_str + ".png", format="png")
+    # ADDING THE IMAGE TO JSON
+    data_set[date_from_str] = create_image_matrix(img, precision)
 
-    # adding the image to the json data
-    data_set["date"].append(date_from_str)
-    data_set["values"].append(create_image_matrix(img, product_type))
-    # converting data_set to json
-    #json_dump = json.dumps(data_set)
-    #print (json_dump)
+# SAVING JSON FILES
+if save_json:
+    with open(directory_path+ year +'.txt', 'w') as outfile:
+        json.dump(data_set, outfile)
+    with open(directory_path+'info.txt', 'w') as outfile:
+        json.dump(info_set, outfile)
 
-with open('data.txt', 'w') as outfile:
-    json.dump(data_set, outfile)
-
+print("END")

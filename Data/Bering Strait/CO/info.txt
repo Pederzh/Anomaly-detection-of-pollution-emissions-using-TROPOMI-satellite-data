@@ -1,0 +1,1 @@
+{"product_type": "CO", "location_name": "Bering Strait", "bbox": [-170.844, 65.396, -167.622, 66.23], "image_dimension": {"width": 99, "height": 99}, "min_max": [0.0, 0.1], "precision": 10000}
