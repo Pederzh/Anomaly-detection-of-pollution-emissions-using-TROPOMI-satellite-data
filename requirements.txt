@@ -1,3 +1,4 @@
+plotly
 requests
 
 oauthlib~=3.1.1
