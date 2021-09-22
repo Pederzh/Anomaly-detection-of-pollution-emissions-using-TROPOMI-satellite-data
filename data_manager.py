@@ -10,7 +10,6 @@ from numpy import array
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
-
 from tkinter import ttk, Tk, Button, Frame, Canvas, BOTH, LEFT, VERTICAL, RIGHT, X, Y, Listbox, END, Label
 
 # Your client credentials
@@ -35,8 +34,9 @@ def image_mean_value(image):
                 tot += image[y][x]
                 n += 1
     if tot != -1:
-        return tot/n
+        return tot / n
     return -1
+
 
 def image_variance_value(image, mean):
     tot = -1
@@ -50,6 +50,7 @@ def image_variance_value(image, mean):
         return tot / n
     return -1
 
+
 def image_to_sorted_list(image):
     list = []
     for i in range(len(image)): list += image[i]
@@ -57,9 +58,11 @@ def image_to_sorted_list(image):
     list.sort()
     return list
 
+
 def image_median_value(sorted_list):
-    median_position = int((len(sorted_list)-1)/2)
+    median_position = int((len(sorted_list) - 1) / 2)
     return sorted_list[median_position]
+
 
 def image_mode_value(frequencies):
     keys = list(frequencies.keys())
@@ -71,17 +74,22 @@ def image_mode_value(frequencies):
             mode = int(keys[i])
     return mode
 
+
 def image_max_value(sorted_list):
-    return sorted_list[len(sorted_list)-1]
+    return sorted_list[len(sorted_list) - 1]
+
 
 def image_min_value(sorted_list):
     return sorted_list[0]
 
+
 def image_min_quartile_value(sorted_list):
-    return sorted_list[int((len(sorted_list)-1)/4)]
+    return sorted_list[int((len(sorted_list) - 1) / 4)]
+
 
 def image_max_quartile_value(sorted_list):
-    return sorted_list[int((len(sorted_list)-1)*3/4)]
+    return sorted_list[int((len(sorted_list) - 1) * 3 / 4)]
+
 
 def image_to_frequencies(sorted_list):
     values = {}
@@ -92,6 +100,7 @@ def image_to_frequencies(sorted_list):
             values[str(sorted_list[i])] += 1
     return values
 
+
 def image_tot_non_zero_values(image):
     tot = 0
     for y in range(len(image)):
@@ -100,11 +109,14 @@ def image_tot_non_zero_values(image):
                 tot += 1
     return tot
 
+
 def image_tot_values(image):
-    return len(image)*len(image[0])
+    return len(image) * len(image[0])
+
 
 def image_non_zero_values_ratio(image):
-    return image_tot_non_zero_values(image)/image_tot_values(image)
+    return image_tot_non_zero_values(image) / image_tot_values(image)
+
 
 def images_variation_mean(image, next):
     tot = 0
@@ -118,6 +130,7 @@ def images_variation_mean(image, next):
         return tot / n
     return -1
 
+
 def images_variation_variance(image, next, mean):
     tot = 0
     n = 0
@@ -130,6 +143,7 @@ def images_variation_variance(image, next, mean):
     if n != 0:
         return tot / n
     return -1
+
 
 def get_image_stats(image):
     sorted_list = image_to_sorted_list(image)
@@ -158,18 +172,22 @@ def get_image_stats(image):
     }
     return stats
 
-def get_image_stats_and_variation (image, image_next):
+
+def get_image_stats_and_variation(image, image_next):
     stats = get_image_stats(image)
     var_mean = images_variation_mean(image, image_next)
     stats["next_image_variation"] = {
-            "variation_mean": var_mean,
-            "variation_variance": images_variation_variance(image, image_next, var_mean)
-        }
+        "variation_mean": var_mean,
+        "variation_variance": images_variation_variance(image, image_next, var_mean)
+    }
     return stats
 
 
-location_name = "Bering Strait"
-product_type = "NO2"
+location_names = ["Bering Strait", "Sabetta Port"]
+product_types = ["CO", "NO2", "CH4"]
+
+location_name = location_names[0]
+product_type = product_types[0]
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
 with open(directory_path + "2019.json") as json_file:
@@ -178,22 +196,23 @@ with open(directory_path + "2020.json") as json_file:
     data_2020 = json.load(json_file)
 with open(directory_path + "2021.json") as json_file:
     data_2021 = json.load(json_file)
-data = data_2019 + data_2020 + data_2021
+
+print(data_2019)
+data = data_2019["data"] + data_2020["data"] + data_2021["data"]
+
+
 
 #
 
 stats = {}
 keys = list(data.keys())
 for i in range(len(keys)):
-    if i != len(keys)-1:
-        stat = get_image_stats_and_variation(data[keys[i]])
-    if i == len(keys)-1:
+    if i != 0:
+        stat = get_image_stats_and_variation(data[keys[i]], data[keys[i-1]])
+        print("current: " + keys[i] + " 8====D prec: " + keys[i-1])
+    else:
         stat = get_image_stats(data[keys[i]])
     stats[keys[i]] = stat
 
-    with open(directory_path+ year +'.txt', 'w') as outfile:
-        json.dump(data_set, outfile)
-
-stats = get_image_stats(data_2019["2019-01-19"])
-
-print(stats)
+with open(directory_path + 'days.json', 'w') as outfile:
+    json.dump(stats, outfile)
