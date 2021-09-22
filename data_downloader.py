@@ -221,7 +221,7 @@ def create_json_element(image_array, date, type):
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # product selected (NO2, CO, CH4)
-product_type = "NO2"
+product_type = "CH4"
 
 # area coordinates
 bbox_coordinates = [ 71.779, 71.138, 72.683, 71.374]
