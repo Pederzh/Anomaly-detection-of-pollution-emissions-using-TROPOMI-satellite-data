@@ -224,9 +224,22 @@ def create_json_element(image_array, date, type):
 product_type = "CH4"
 
 # area coordinates
-bbox_coordinates = [ 71.779, 71.138, 72.683, 71.374]
-location_name = "Bering Strait" # [ -170.844, 65.396, -167.622, 66.230]
-location_name = "Sabetta Port" # [ 71.779, 71.138, 72.683, 71.374]
+
+beringStrait = {
+    "box": [ -170.844, 65.396, -167.622, 66.230],
+    "location": "Bering Strait"
+}
+
+sabettaPort = {
+    "box": [ 71.779, 71.138, 72.683, 71.374],
+    "location": "Sabetta Port",
+}
+
+#CHANGE THIS
+selectedLocation = sabettaPort
+
+bbox_coordinates = selectedLocation["box"]
+location_name = selectedLocation["location"]
 
 # image dimension
 multiplier = 30
@@ -237,8 +250,8 @@ dimension = { "width": n_pixel, "height": n_pixel}
 
 # time window considered
 date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2019, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2020, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 year = str(date_start.year)
 
 # time range for the sampling period
@@ -248,11 +261,11 @@ time_sp = 1 # in days
 precision = 10000
 
 # if want to save png and json
-save_png = True
+save_png = False
 save_json = True
 
 # if the image to load is in a file
-read_from_file = False
+read_from_file = True
 
 # directory path
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
@@ -278,6 +291,7 @@ info_set = {
             "min_max": get_min_max_val(product_type),
             "precision": precision
         }
+
 data_set = {}
 
 for day_counter in range(int((date_end-date_start).days/time_sp)):
@@ -313,11 +327,14 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     # ADDING THE IMAGE TO JSON
     data_set[date_from_str] = create_image_matrix(img, precision)
 
+file_json = {
+    "info": info_set,
+    "data": data_set
+}
+
 # SAVING JSON FILES
 if save_json:
-    with open(directory_path+ year +'.txt', 'w') as outfile:
-        json.dump(data_set, outfile)
-    with open(directory_path+'info.txt', 'w') as outfile:
-        json.dump(info_set, outfile)
+    with open(directory_path+ year +'.json', 'w') as outfile:
+        json.dump(file_json, outfile)
 
 print("END")
