@@ -254,8 +254,8 @@ def save_period_stats(data_set, date_start, date_end, location_name, product_typ
                 "mode": list_mode_value(list),
                 "variance": list_variance_value(list, mean),
                 "min": list_min_value(list),
-                "min_quartile": list_min_quartile_value(list),
-                "max_quartile": list_max_quartile_value(list),
+                "quartile_025": list_min_quartile_value(list),
+                "quartile_075": list_max_quartile_value(list),
                 "max": list_max_value(list),
                 "zeroes": int((date_end - date_start).days) - len(list),
                 "non_zeroes": len(list)
@@ -301,12 +301,13 @@ with open(directory_path + "2021.json") as json_file:
 
 data_set = dict(data_2019["data"])
 data_set.update(data_2020["data"])
-data_set.update(data_2021["data"])
+#data_set.update(data_2021["data"])
 
 date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
 
-save_period_stats(data_set, date_start, date_end, location_name, product_type)
+save_days_stats(data_set, directory_path)
+#save_period_stats(data_set, date_start, date_end, location_name, product_type)
 
 
