@@ -139,20 +139,20 @@ def get_image_stats(image):
     mean = image_mean_value(image)
     stats = {
         "frequencies": frequencies,
-        "image statistics": {
+        "image_statistics": {
             "mean": mean,
             "mode": mode,
             "median": median,
             "variance": image_variance_value(image, mean),
             "n_tot": image_tot_values(image),
-            "non zeroes": image_tot_non_zero_values(image),
-            "zeroes frequency": image_non_zero_values_ratio(image),
+            "non_zeroes": image_tot_non_zero_values(image),
+            "zeroes_frequency": image_non_zero_values_ratio(image),
         },
-        "box plot": {
+        "box_plot": {
             "min": image_min_value(sorted_list),
-            "quartile 0.25": image_min_quartile_value(sorted_list),
+            "quartile_025": image_min_quartile_value(sorted_list),
             "median": median,
-            "quartile 0.75": image_max_quartile_value(sorted_list),
+            "quartile_075": image_max_quartile_value(sorted_list),
             "max": image_max_value(sorted_list),
         },
     }
@@ -161,9 +161,9 @@ def get_image_stats(image):
 def get_image_stats_and_variation (image, image_next):
     stats = get_image_stats(image)
     var_mean = images_variation_mean(image, image_next)
-    stats["next image variation"] = {
-            "variation mean": var_mean,
-            "variation variance": images_variation_variance(image, image_next, var_mean)
+    stats["next_image_variation"] = {
+            "variation_mean": var_mean,
+            "variation_variance": images_variation_variance(image, image_next, var_mean)
         }
     return stats
 
@@ -172,11 +172,11 @@ location_name = "Bering Strait"
 product_type = "NO2"
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
-with open(directory_path + "2019.txt") as json_file:
+with open(directory_path + "2019.json") as json_file:
     data_2019 = json.load(json_file)
-with open(directory_path + "2020.txt") as json_file:
+with open(directory_path + "2020.json") as json_file:
     data_2020 = json.load(json_file)
-with open(directory_path + "2021.txt") as json_file:
+with open(directory_path + "2021.json") as json_file:
     data_2021 = json.load(json_file)
 data = data_2019 + data_2020 + data_2021
 
