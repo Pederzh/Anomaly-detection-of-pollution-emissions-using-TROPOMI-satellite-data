@@ -1,1 +1,0 @@
-{"product_type": "CO", "location_name": "Sabetta Port", "bbox": [71.779, 71.138, 72.683, 71.374], "image_dimension": {"width": 28, "height": 28}, "min_max": [0.0, 0.1], "precision": 10000}

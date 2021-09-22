@@ -1,1 +1,0 @@
-{"product_type": "CH4", "location_name": "Sabetta Port", "bbox": [71.779, 71.138, 72.683, 71.374], "image_dimension": {"width": 28, "height": 28}, "min_max": [1600.0, 2000.0], "precision": 10000}
