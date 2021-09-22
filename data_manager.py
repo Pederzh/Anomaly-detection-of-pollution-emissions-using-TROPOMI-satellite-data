@@ -60,6 +60,7 @@ def image_to_sorted_list(image):
 
 
 def image_median_value(sorted_list):
+    if len(sorted_list) == 0: return -1
     median_position = int((len(sorted_list) - 1) / 2)
     return sorted_list[median_position]
 
@@ -76,18 +77,22 @@ def image_mode_value(frequencies):
 
 
 def image_max_value(sorted_list):
+    if len(sorted_list) == 0: return -1
     return sorted_list[len(sorted_list) - 1]
 
 
 def image_min_value(sorted_list):
+    if len(sorted_list) == 0: return -1
     return sorted_list[0]
 
 
 def image_min_quartile_value(sorted_list):
+    if len(sorted_list) == 0: return -1
     return sorted_list[int((len(sorted_list) - 1) / 4)]
 
 
 def image_max_quartile_value(sorted_list):
+    if len(sorted_list) == 0: return -1
     return sorted_list[int((len(sorted_list) - 1) * 3 / 4)]
 
 
@@ -196,23 +201,29 @@ with open(directory_path + "2020.json") as json_file:
     data_2020 = json.load(json_file)
 with open(directory_path + "2021.json") as json_file:
     data_2021 = json.load(json_file)
+with open(directory_path + "info.txt") as json_file:
+    info = json.load(json_file)
 
-print(data_2019)
-data = data_2019["data"] + data_2020["data"] + data_2021["data"]
+data = dict(data_2019["data"])
+data.update(data_2020["data"])
+data.update(data_2021["data"])
 
 
-
-#
+# DAYS
 
 stats = {}
 keys = list(data.keys())
 for i in range(len(keys)):
     if i != 0:
         stat = get_image_stats_and_variation(data[keys[i]], data[keys[i-1]])
-        print("current: " + keys[i] + " 8====D prec: " + keys[i-1])
+        #print("current: " + keys[i] + " 8====D prec: " + keys[i-1])
     else:
         stat = get_image_stats(data[keys[i]])
     stats[keys[i]] = stat
+    if i % 100 == 0: print(i)
+
+# MONTH
+
 
 with open(directory_path + 'days.json', 'w') as outfile:
     json.dump(stats, outfile)
