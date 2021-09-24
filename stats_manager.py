@@ -78,14 +78,9 @@ def list_min_value(sorted_list):
     if len(sorted_list) == 0: return -1
     return sorted_list[0]
 
-
-def list_min_quartile_value(sorted_list):
+def list_quartile_value(sorted_list, position):
     if len(sorted_list) == 0: return -1
-    return sorted_list[int(round(((len(sorted_list) - 1) / 4), 0))]
-
-def list_max_quartile_value(sorted_list):
-    if len(sorted_list) == 0: return -1
-    return sorted_list[int(round(((len(sorted_list) - 1) * 3 / 4), 0))]
+    return sorted_list[int(round(((len(sorted_list) - 1) * position), 0))]
 
 def list_mean_value(sorted_list):
     if len(sorted_list) == 0: return -1
@@ -178,14 +173,15 @@ def get_image_stats(image):
         },
         "box_plot": {
             "min": list_min_value(sorted_list),
-            "quartile_025": list_min_quartile_value(sorted_list),
+            "quartile_010": list_quartile_value(list, 0.10),
+            "quartile_025": list_quartile_value(list, 0.25),
             "median": median,
-            "quartile_075": list_max_quartile_value(sorted_list),
+            "quartile_075": list_quartile_value(list, 0.75),
+            "quartile_090": list_quartile_value(list, 0.90),
             "max": list_max_value(sorted_list),
         },
     }
     return stats
-
 
 def get_image_stats_and_variation(image, image_next):
     stats = get_image_stats(image)
@@ -204,13 +200,18 @@ def date_to_str(date):
     date_str += str(date.day)
     return date_str
 
+def str_to_date(str_date):
+    str_date = str_date.split("-")
+    date = datetime.datetime.now()
+    date = date.replace(year=int(str_date[0]), month=int(str_date[1]), day=int(str_date[2]))
+    return date
 
 
 
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                   DAYS STATS
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                       DAYS STATISTICS GIVEN A DATA SET OF IMAGES
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 def save_days_stats(data, directory_path):
@@ -230,12 +231,12 @@ def save_days_stats(data, directory_path):
 
 
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                   PERIOD MATRIX
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                               PIXELS STATISTICS OVER PERIOD
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-def save_period_stats(data_set, date_start, date_end, location_name, product_type):
+def save_period_pixels_stats(data_set, date_start, date_end, location_name, product_type):
     pixels = []
     for y in range(len(data_set[date_to_str(date_start)])):
         pixels.append([])
@@ -254,8 +255,10 @@ def save_period_stats(data_set, date_start, date_end, location_name, product_typ
                 "mode": list_mode_value(list),
                 "variance": list_variance_value(list, mean),
                 "min": list_min_value(list),
-                "quartile_025": list_min_quartile_value(list),
-                "quartile_075": list_max_quartile_value(list),
+                "quartile_010": list_quartile_value(list, 0.10),
+                "quartile_025": list_quartile_value(list, 0.25),
+                "quartile_075": list_quartile_value(list, 0.75),
+                "quartile_090": list_quartile_value(list, 0.90),
                 "max": list_max_value(list),
                 "zeroes": int((date_end - date_start).days) - len(list),
                 "non_zeroes": len(list)
@@ -281,9 +284,107 @@ def save_period_stats(data_set, date_start, date_end, location_name, product_typ
 
 
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#              PARAMETERS DEFINITION
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                           PERIOD STATISTICS GIVEN DAYS STATISTICS
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+def frequencies_to_list(frequencies):
+    keys = list(frequencies.keys())
+    list_out = []
+    for i in range(len(keys)):
+        for f in range(frequencies[keys[i]]):
+            list_out.append(int(keys[i]))
+    return list_out
+
+def get_frequencies_stats(fqs):
+    list = frequencies_to_list(fqs)
+    list.sort()
+    mean = list_mean_value(list)
+    median = list_median_value(list)
+    stat = {
+        "statistics": {
+            "mean": mean,
+            "mode": list_mode_value(list),
+            "median": median,
+            "variance": list_variance_value(list, mean),
+            "n_tot": 0,
+            "non_zeroes": 0,
+            "zeroes_frequency": 0
+        },
+        "box_plot": {
+            "min": list_min_value(list),
+            "quartile_010": list_quartile_value(list, 0.10),
+            "quartile_025": list_quartile_value(list, 0.25),
+            "median": median,
+            "quartile_075": list_quartile_value(list, 0.75),
+            "quartile_090": list_quartile_value(list, 0.90),
+            "max": list_max_value(list),
+        },
+    }
+    return stat
+
+def save_periodicity_stats(days_stats, periodicity):
+    # periodicity --> WEEKLY, MONTHLY, ANNUALLY
+    stats = {}
+    frequencies = {}
+    n_tot = 0
+    non_zeroes = 0
+    keys = list(days_stats.keys())
+    keys.sort()
+    day_start = keys[0]
+    for i in range(len(keys)):
+        # setting next date
+        current_day = str_to_date(keys[i])
+        if i < len(keys)-1: next_day = str_to_date(keys[i+1])
+        # aggregating frequencies
+        f_list = days_stats[keys[i]]["frequencies"]
+        f_keys = list(f_list.keys())
+        for f in range(len(f_keys)):
+            if f_keys[f] not in frequencies.keys():
+                frequencies[f_keys[f]] = f_list[f_keys[f]]
+            else:
+                frequencies[f_keys[f]] += f_list[f_keys[f]]
+        # calculating elements presence
+        n_tot += days_stats[keys[i]]["image_statistics"]["n_tot"]
+        non_zeroes += days_stats[keys[i]]["image_statistics"]["non_zeroes"]
+        refresh = False
+        if periodicity == "WEEKLY":
+            if int((next_day - current_day).days) >= 7 or next_day.weekday() < current_day.weekday():
+                refresh = True
+        if periodicity == "MONTHLY":
+            if current_day.year != next_day.year or current_day.month != next_day.month:
+                refresh = True
+        if periodicity == "ANNUALLY":
+            if current_day.year != next_day.year:
+                refresh = True
+        if refresh or i == len(keys)-1:
+            if periodicity == "WEEKLY": key = day_start
+            if periodicity == "MONTHLY":
+                key = date_to_str(current_day)
+                key = key.split("-")[0] + "-" + key.split("-")[1]
+            if periodicity == "ANNUALLY": key = str(current_day.year)
+            stat = get_frequencies_stats(frequencies)
+            stat["statistics"]["n_tot"] = n_tot
+            stat["statistics"]["non_zeroes"] = non_zeroes
+            stat["statistics"]["zeroes_frequency"] = (n_tot-non_zeroes)/n_tot
+            n_tot = 0
+            non_zeroes = 0
+            frequencies = {}
+            stats[key] = stat
+            if i < len(keys)-1: day_start = keys[i+1]
+    stats["info"] = {"periodicity": periodicity}
+    return stats
+
+
+
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                                   PARAMETERS DEFINITION
+#                                      FUNCTION CALLER
+#                                           MAIN
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 location_names = ["Bering Strait", "Sabetta Port"]
 product_types = ["CO", "NO2", "CH4"]
@@ -292,7 +393,7 @@ location_name = location_names[0]
 product_type = product_types[0]
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
-with open(directory_path + "2019.json") as json_file:
+"""with open(directory_path + "2019.json") as json_file:
     data_2019 = json.load(json_file)
 with open(directory_path + "2020.json") as json_file:
     data_2020 = json.load(json_file)
@@ -301,13 +402,18 @@ with open(directory_path + "2021.json") as json_file:
 
 data_set = dict(data_2019["data"])
 data_set.update(data_2020["data"])
-#data_set.update(data_2021["data"])
+data_set.update(data_2021["data"])"""
 
 date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
 
-save_days_stats(data_set, directory_path)
-#save_period_stats(data_set, date_start, date_end, location_name, product_type)
+# !!!!!!!!!!!! CALLING !!!!!!!!!!!!!!!
+#save_days_stats(data_set, directory_path)
+#save_period_pixels_stats(data_set, date_start, date_end, location_name, product_type)
 
+with open(directory_path + "Statistics/days.json") as json_file:
+    days_stats = json.load(json_file)
 
+tmp = save_periodicity_stats(days_stats, "MONTHLY")
+print(tmp["2021-08"]["statistics"])
