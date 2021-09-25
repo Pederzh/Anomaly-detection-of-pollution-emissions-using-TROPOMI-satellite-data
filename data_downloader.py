@@ -31,7 +31,7 @@ token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/tok
 #             POST REQUEST FUNCTION
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
+def get_response (bbox, date_from_str, date_to_str, s_product, dimension, minQa):
     if s_product == "CH4":
         product_evalscritp = """
                     //VERSION=3
@@ -119,9 +119,7 @@ def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
                               "to": date_to_str + "T00:00:00Z",
                           }
                       },
-                      "processing": {
-                          "minQa": 0
-                      }
+                      "processing": minQa
                   }
               ]
           },
@@ -221,7 +219,7 @@ def create_json_element(image_array, date, type):
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # product selected (NO2, CO, CH4)
-product_type = "CH4"
+product_type = "NO2"
 
 # area coordinates
 
@@ -250,8 +248,8 @@ dimension = { "width": n_pixel, "height": n_pixel}
 
 # time window considered
 date = datetime.datetime.now()
-date_start = date.replace(year=2019, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2020, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
 year = str(date_start.year)
 
 # time range for the sampling period
@@ -261,16 +259,18 @@ time_sp = 1 # in days
 precision = 10000
 
 # if want to save png and json
-save_png = False
-save_json = True
+save_png = True
+save_json = False
 
 # if the image to load is in a file
-read_from_file = True
+read_from_file = False
 
 # directory path
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
-
+# min data quality
+minQa = {"minQa": 0} # min data quality = 0
+minQa = {} # min data quality = default
 
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -313,7 +313,7 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     # GETTING THE IMAGE
     if not read_from_file:
         # FROM POST CALL
-        response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type, dimension)
+        response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type, dimension, minQa)
         in_memory_file = io.BytesIO(response.content)
         img_png = Image.open(in_memory_file)
     if read_from_file:
@@ -323,7 +323,10 @@ for day_counter in range(int((date_end-date_start).days/time_sp)):
     img = array(img_png)
     # SAVING PNG IMAGE
     if save_png:
-        img_png.save(directory_path + "Images/" + date_from_str + ".png", format="png")
+        if len(list(minQa.keys())) == 0:
+            img_png.save(directory_path + "Images/High Data Quality/" + date_from_str + ".png", format="png")
+        else:
+            img_png.save(directory_path + "Images/" + date_from_str + ".png", format="png")
     # ADDING THE IMAGE TO JSON
     data_set[date_from_str] = create_image_matrix(img, precision)
 
