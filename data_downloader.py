@@ -196,7 +196,7 @@ def create_image_matrix(image_array, precision):
         image_matrix.append([])
         for x in range(len(image_array[y])):
             if image_array[y][x][3] == 0: image_matrix[y].append(-1)
-            if image_array[y][x][3] != 0: image_matrix[y].append(get_bw_value(image_array[y][x], precision))
+            else: image_matrix[y].append(get_bw_value(image_array[y][x], precision))
     return image_matrix
 
 def create_json_element(image_array, date, type):
@@ -214,130 +214,211 @@ def create_json_element(image_array, date, type):
 
 
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#               PARAMETERS DEFINITION
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-# product selected (NO2, CO, CH4)
-product_type = "NO2"
-
-# area coordinates
-
-beringStrait = {
-    "box": [ -170.844, 65.396, -167.622, 66.230],
-    "location": "Bering Strait"
-}
-
-sabettaPort = {
-    "box": [ 71.779, 71.138, 72.683, 71.374],
-    "location": "Sabetta Port",
-}
-
-#CHANGE THIS
-selectedLocation = sabettaPort
-
-bbox_coordinates = selectedLocation["box"]
-location_name = selectedLocation["location"]
-
-# image dimension
-multiplier = 30
-width = abs(bbox_coordinates[0]-bbox_coordinates[2])
-height = abs(bbox_coordinates[1]-bbox_coordinates[3])
-n_pixel = int(math.sqrt(pow(width,2)+pow(height,2)) * multiplier)
-dimension = { "width": n_pixel, "height": n_pixel}
-
-# time window considered
-date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
-year = str(date_start.year)
-
-# time range for the sampling period
-time_sp = 1 # in days
-
-# values precision (values converted in %)
-precision = 10000
-
-# if want to save png and json
-save_png = True
-save_json = False
-
-# if the image to load is in a file
-read_from_file = False
-
-# directory path
-directory_path = "./Data/" + location_name + "/" + product_type + "/"
-
-# min data quality
-minQa = {"minQa": 0} # min data quality = 0
-minQa = {} # min data quality = default
 
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                   RUNNING
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# GETTING AND SAVING THE IMAGES FORM TROPOMI
-images = []
-date_from = date_start
-date_to = date_start
 
-# initializing json data
-info_set = {
-            "product_type": product_type,
-            "location_name": location_name,
-            "bbox": bbox_coordinates,
-            "image_dimension": dimension,
-            "min_max": get_min_max_val(product_type),
-            "precision": precision
-        }
 
-data_set = {}
 
-for day_counter in range(int((date_end-date_start).days/time_sp)):
-    date_from = date_to
-    date_to = date_to + datetime.timedelta(days=time_sp)
-    # setting date from string for the api call
-    date_from_str = str(date_from.year)+"-"
-    if (date_from.month<10): date_from_str+="0"
-    date_from_str += str(date_from.month)+"-"
-    if (date_from.day < 10): date_from_str += "0"
-    date_from_str += str(date_from.day)
-    # setting date to string for the api call
-    date_to_str = str(date_to.year) + "-"
-    if (date_to.month < 10): date_to_str += "0"
-    date_to_str += str(date_to.month) + "-"
-    if (date_to.day < 10): date_to_str += "0"
-    date_to_str += str(date_to.day)
-    print("calling for range   " + date_from_str + "    to    " + date_to_str)
-    # GETTING THE IMAGE
-    if not read_from_file:
-        # FROM POST CALL
+def download_images(product_type, location_name, minQa_info, date_start, date_end):
+
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #                   PARAMETERS
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # setting coordinates
+    if location_name == "Bering Strait": bbox_coordinates = [-170.844, 65.396, -167.622, 66.230]
+    if location_name == "Sabetta Port": bbox_coordinates = [71.779, 71.138, 72.683, 71.374]
+    # setting image dimension
+    multiplier = 30
+    width = abs(bbox_coordinates[0] - bbox_coordinates[2])
+    height = abs(bbox_coordinates[1] - bbox_coordinates[3])
+    n_pixel = int(math.sqrt(pow(width, 2) + pow(height, 2)) * multiplier)
+    dimension = {"width": n_pixel, "height": n_pixel}
+    # setting time range for the sampling period
+    time_sp = 1  # in days
+    # setting directory path
+    directory_path = "./Data/" + location_name + "/" + product_type + "/"
+    # min data quality
+    if minQa_info == "high": minQa = {}
+    else: minQa = {"minQa": 0}
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #           VARIABLES INITIALIZATION
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    date_to = date_start
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #                   RUNNING
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    for day_counter in range(int((date_end - date_start).days / time_sp)):
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #               UPDATING PARAMETERS
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        date_from = date_to
+        date_to = date_to + datetime.timedelta(days=time_sp)
+        # setting date from string for the api call
+        date_from_str = str(date_from.year) + "-"
+        if (date_from.month < 10): date_from_str += "0"
+        date_from_str += str(date_from.month) + "-"
+        if (date_from.day < 10): date_from_str += "0"
+        date_from_str += str(date_from.day)
+        # setting date to string for the api call
+        date_to_str = str(date_to.year) + "-"
+        if (date_to.month < 10): date_to_str += "0"
+        date_to_str += str(date_to.month) + "-"
+        if (date_to.day < 10): date_to_str += "0"
+        date_to_str += str(date_to.day)
+        print("calling for range   " + date_from_str + "    to    " + date_to_str)
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #                   API CALL
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type, dimension, minQa)
         in_memory_file = io.BytesIO(response.content)
         img_png = Image.open(in_memory_file)
-    if read_from_file:
-        # FROM FILE
-        img_png = Image.open(directory_path + "Images/" + date_from_str + ".png")
-    # SAVING THE RESPONSE CONTENT AS AN IMAGE
-    img = array(img_png)
-    # SAVING PNG IMAGE
-    if save_png:
+        # SAVING THE RESPONSE CONTENT AS A PNG IMAGE
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #               SAVING PNG IMAGE
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if len(list(minQa.keys())) == 0:
             img_png.save(directory_path + "Images/High Data Quality/" + date_from_str + ".png", format="png")
         else:
-            img_png.save(directory_path + "Images/" + date_from_str + ".png", format="png")
-    # ADDING THE IMAGE TO JSON
-    data_set[date_from_str] = create_image_matrix(img, precision)
+            img_png.save(directory_path + "Images/All Data Quality" + date_from_str + ".png", format="png")
+    print("END")
 
-file_json = {
-    "info": info_set,
-    "data": data_set
+
+
+
+
+
+
+
+
+
+
+
+
+def convert_image_to_json(product_type, location_name, minQa_info, precision, date_start, date_end):
+
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #                   PARAMETERS
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # setting coordinates
+    if location_name == "Bering Strait": bbox_coordinates = [-170.844, 65.396, -167.622, 66.230]
+    if location_name == "Sabetta Port": bbox_coordinates = [71.779, 71.138, 72.683, 71.374]
+    # image dimension
+    multiplier = 30
+    width = abs(bbox_coordinates[0] - bbox_coordinates[2])
+    height = abs(bbox_coordinates[1] - bbox_coordinates[3])
+    n_pixel = int(math.sqrt(pow(width, 2) + pow(height, 2)) * multiplier)
+    dimension = {"width": n_pixel, "height": n_pixel}
+    # year considered
+    year = str(date_start.year)
+    # time range for the sampling period
+    time_sp = 1  # in days
+    # directory path
+    directory_path = "./Data/" + location_name + "/" + product_type + "/"
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #           VARIABLES INITIALIZATION
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    date_to = date_start
+    info_set = {
+        "product_type": product_type,
+        "location_name": location_name,
+        "bbox": bbox_coordinates,
+        "image_dimension": dimension,
+        "min_max": get_min_max_val(product_type),
+        "precision": precision,
+        "minQa": minQa_info
+    }
+    data_set_hq = {}
+    data_set_aq = {}
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #                   RUNNING
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    for day_counter in range(int((date_end - date_start).days / time_sp)):
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #               UPDATING PARAMETERS
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        date_from = date_to
+        date_to = date_to + datetime.timedelta(days=time_sp)
+        # setting date from string for the api call
+        date_from_str = str(date_from.year) + "-"
+        if (date_from.month < 10): date_from_str += "0"
+        date_from_str += str(date_from.month) + "-"
+        if (date_from.day < 10): date_from_str += "0"
+        date_from_str += str(date_from.day)
+        # setting date to string for the api call
+        date_to_str = str(date_to.year) + "-"
+        if (date_to.month < 10): date_to_str += "0"
+        date_to_str += str(date_to.month) + "-"
+        if (date_to.day < 10): date_to_str += "0"
+        date_to_str += str(date_to.day)
+        print("calling for range   " + date_from_str + "    to    " + date_to_str)
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #           CONVERTING IMAGE TO JSON
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if minQa_info == "" or minQa_info == "high":
+            img_png_hq = Image.open(directory_path + "Images/High Data Quality/" + date_from_str + ".png")
+            img_hq = array(img_png_hq)
+            data_set_hq[date_from_str] = create_image_matrix(img_hq, precision)
+        if minQa_info == "" or minQa_info == "all":
+            img_png_aq = Image.open(directory_path + "Images/All Data Quality/" + date_from_str + ".png")
+            img_aq = array(img_png_aq)
+            data_set_aq[date_from_str] = create_image_matrix(img_aq, precision)
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #               SAVING JSON FILE
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if minQa_info == "" or minQa_info == "high":
+        file_json = {
+            "info": info_set,
+            "data": data_set_hq
+        }
+        with open(directory_path + "Image Data/High Data Quality/" + year + '.json', 'w') as outfile:
+            json.dump(file_json, outfile)
+    if minQa_info == "" or minQa_info == "all":
+        file_json = {
+            "info": info_set,
+            "data": data_set_aq
+        }
+        with open(directory_path + "Image Data/All Data Quality/" + year + '.json', 'w') as outfile:
+            json.dump(file_json, outfile)
+    print("END")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                       MAIN
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+values = {
+    "product_types": ["NO2", "CO", "CH4"],
+    "locations_name": ["Bering Strait", "Sabetta Port"],
+    "minQas": ["high", "all"]
 }
+date = datetime.datetime.now()
+date_start = date.replace(year=2019, month=1, day=1)
+date_end = date.replace(year=2020, month=1, day=1)
 
-# SAVING JSON FILES
-if save_json:
-    with open(directory_path+ year +'.json', 'w') as outfile:
-        json.dump(file_json, outfile)
+product_type = values["product_types"][2]
+location_name = values["locations_name"][1]
+minQa = values["minQas"][0]
 
-print("END")
+
+# FOR IMAGES DOWNLOAD
+#download_images(product_type, location_name, minQa, date_start, date_end)
+
+
+# FOR JSON CONVERTING
+precision = 10000
+# date start and end should consider only one year
+convert_image_to_json(product_type, location_name, "", precision, date_start, date_end)
