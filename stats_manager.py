@@ -559,4 +559,4 @@ with open(directory_path + "Statistics/days.json") as json_file:
     days_stats = json.load(json_file)
 
 # MONTHLY, WEEKLY, ANNUALLY
-save_periodicity_stats(days_stats, "WEEKLY", directory_path)
+save_periodicity_stats(days_stats, "ANNUALLY", directory_path)
