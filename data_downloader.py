@@ -504,11 +504,11 @@ values = {
     "minQas": ["high", "all"]
 }
 date = datetime.datetime.now()
-date_start = date.replace(year=2019, month=1, day=1)
-date_end = date.replace(year=2020, month=1, day=1)
+date_start = date.replace(year=2021, month=1, day=1)
+date_end = date.replace(year=2021, month=9, day=1)
 
-product_type = values["product_types"][2]
-location_name = values["locations_name"][1]
+product_type = values["product_types"][0]
+location_name = values["locations_name"][0]
 minQa = values["minQas"][0]
 
 
