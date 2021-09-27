@@ -99,7 +99,7 @@ def list_variance_value(sorted_list, mean):
     if len(sorted_list) == 1: return 0
     return stst.variance(sorted_list, mean)
 
-def image_to_frequencies(sorted_list):
+def list_to_frequencies(sorted_list):
     values = {}
     for i in range(len(sorted_list)):
         if sorted_list[i] != -1:
@@ -173,27 +173,41 @@ def str_to_date(str_date):
 
 
 
+
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #                       DAYS STATISTICS GIVEN A DATA SET OF IMAGES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
+def append_stat(obj, obj_list):
+    obj_list["frequencies"].append(obj["frequencies"])
+    tmp_keys = list(obj_list["statistics"].keys())
+    for tmp in range(len(tmp_keys)):
+        obj_list["statistics"][tmp_keys[tmp]].append(obj["statistics"][tmp_keys[tmp]])
+    tmp_keys = list(obj_list["box_plot"].keys())
+    for tmp in range(len(tmp_keys)):
+        obj_list["box_plot"][tmp_keys[tmp]].append(obj["box_plot"][tmp_keys[tmp]])
+    return obj_list
+
 def get_image_stats(image):
     sorted_list = image_to_sorted_list(image)
-    frequencies = image_to_frequencies(sorted_list)
+    frequencies = list_to_frequencies(sorted_list)
     median = list_median_value(sorted_list)
-    mode = image_mode_value(frequencies)
-    mean = image_mean_value(image)
+    mode = list_mode_value(sorted_list)
+    mean = list_mean_value(sorted_list)
+    n_tot = image_tot_values(image)
+    non_zeroes = image_tot_non_zero_values(image)
     stats = {
         "frequencies": frequencies,
         "statistics": {
             "mean": mean,
             "mode": mode,
             "median": median,
-            "variance": image_variance_value(image, mean),
-            "n_tot": image_tot_values(image),
-            "non_zeroes": image_tot_non_zero_values(image),
-            "zeroes_frequency": image_non_zero_values_ratio(image),
+            "variance": list_variance_value(sorted_list, mean),
+            "n_tot": n_tot,
+            "non_zeroes": non_zeroes,
+            "zeroes": n_tot - non_zeroes,
         },
         "box_plot": {
             "min": list_min_value(sorted_list),
@@ -208,11 +222,32 @@ def get_image_stats(image):
     return stats
 
 
-def save_days_stats_w_quality(data, directory_path):
+def save_days_stats(data, directory_path):
     stats = {}
     keys = list(data.keys())
     print("starting")
     for i in range(len(keys)):
+        stat_quality = {
+            "frequencies": [],
+            "statistics": {
+                "mean": [],
+                "mode": [],
+                "median": [],
+                "variance": [],
+                "n_tot": [],
+                "non_zeroes": [],
+                "zeroes": [],
+            },
+            "box_plot": {
+                "min": [],
+                "quartile_010": [],
+                "quartile_025": [],
+                "median": [],
+                "quartile_075": [],
+                "quartile_090": [],
+                "max": [],
+            },
+        }
         stats[keys[i]] = {}
         tmp_img = []
         for y in range(len(data[keys[i]])):
@@ -221,28 +256,20 @@ def save_days_stats_w_quality(data, directory_path):
                 tmp_img[y].append(data[keys[i]][y][x][0])
         # getting all quality image stats
         stat = get_image_stats(tmp_img)
-        stats[keys[i]]["All_Data_Quality"] = stat
+        stat_quality = append_stat(stat, stat_quality)
         # getting high quality image stats
         for y in range(len(data[keys[i]])):
             for x in range(len(data[keys[i]][y])):
                 if data[keys[i]][y][x][1] == 0 and data[keys[i]][y][x][0] != -1:
                     tmp_img[y][x] = -1
         stat = get_image_stats(tmp_img)
-        stats[keys[i]]["High_Data_Quality"] = stat
-        if i % 100 == 0: print(i)
-    with open(directory_path + "Statistics/" + "days_tmp.json", 'w') as outfile:
-        json.dump(stats, outfile)
-
-
-def save_days_stats(data, directory_path):
-    stats = {}
-    keys = list(data.keys())
-    for i in range(len(keys)):
-        stat = get_image_stats(data[keys[i]])
-        stats[keys[i]] = stat
+        stat_quality = append_stat(stat, stat_quality)
+        # putting both stat in stats
+        stats[keys[i]] = stat_quality
         if i % 100 == 0: print(i)
     with open(directory_path + "Statistics/" + "days.json", 'w') as outfile:
         json.dump(stats, outfile)
+
 
 
 
@@ -255,34 +282,84 @@ def save_days_stats(data, directory_path):
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
+def get_period_pixel_stats(sorted_list):
+    frequencies = list_to_frequencies(sorted_list)
+    median = list_median_value(sorted_list)
+    mode = list_mode_value(sorted_list)
+    mean = list_mean_value(sorted_list)
+    stats = {
+        "frequencies": frequencies,
+        "statistics": {
+            "mean": mean,
+            "mode": mode,
+            "median": median,
+            "variance": list_variance_value(sorted_list, mean),
+        },
+        "box_plot": {
+            "min": list_min_value(sorted_list),
+            "quartile_010": list_quartile_value(sorted_list, 0.10),
+            "quartile_025": list_quartile_value(sorted_list, 0.25),
+            "median": median,
+            "quartile_075": list_quartile_value(sorted_list, 0.75),
+            "quartile_090": list_quartile_value(sorted_list, 0.90),
+            "max": list_max_value(sorted_list),
+        },
+    }
+    return stats
+
+
 def save_period_pixels_stats(data_set, date_start, date_end, location_name, product_type):
     pixels = []
     for y in range(len(data_set[date_to_str(date_start)])):
         pixels.append([])
         for x in range(len(data_set[date_to_str(date_start)][y])):
-            list = []
+            list_aq = []
+            list_hq = []
+            pixel_quality = {
+                "frequencies": [],
+                "statistics": {
+                    "mean": [],
+                    "mode": [],
+                    "median": [],
+                    "variance": [],
+                    "n_tot": [],
+                    "zeroes": [],
+                    "non_zeroes": [],
+                },
+                "box_plot": {
+                    "min": [],
+                    "quartile_010": [],
+                    "quartile_025": [],
+                    "median": [],
+                    "quartile_075": [],
+                    "quartile_090": [],
+                    "max": [],
+                },
+            }
             # generating pixel list of different days
             for i in range(int((date_end - date_start).days)):
                 date = date_start + datetime.timedelta(days=i)
                 if data_set[date_to_str(date)][y][x] != -1:
-                    list.append(data_set[date_to_str(date)][y][x])
-            list.sort()
-            mean = list_mean_value(list)
-            pixel = {
-                "mean": mean,
-                "median": list_median_value(list),
-                "mode": list_mode_value(list),
-                "variance": list_variance_value(list, mean),
-                "min": list_min_value(list),
-                "quartile_010": list_quartile_value(list, 0.10),
-                "quartile_025": list_quartile_value(list, 0.25),
-                "quartile_075": list_quartile_value(list, 0.75),
-                "quartile_090": list_quartile_value(list, 0.90),
-                "max": list_max_value(list),
-                "zeroes": int((date_end - date_start).days) - len(list),
-                "non_zeroes": len(list)
-            }
-            pixels[y].append(pixel)
+                    list_aq.append(data_set[date_to_str(date)][y][x][0])
+                    if data_set[date_to_str(date)][y][x][1] == 0:
+                        list_hq.append(-1)
+                    else:
+                        list_hq.append(data_set[date_to_str(date)][y][x][0])
+            list_aq.sort()
+            # getting all quality image stats
+            pixel = get_period_pixel_stats(list_aq)
+            pixel["statistics"]["n_tot"] = int((date_end - date_start).days)
+            pixel["statistics"]["zeroes"] = int((date_end - date_start).days) - len(list_aq)
+            pixel["statistics"]["non_zeroes"] = len(list_aq)
+            pixel_quality = append_stat(pixel, pixel_quality)
+            # getting high quality image stats
+            pixel = get_period_pixel_stats(list_hq)
+            pixel["statistics"]["n_tot"] = int((date_end - date_start).days)
+            pixel["statistics"]["zeroes"] = int((date_end - date_start).days) - len(list_hq)
+            pixel["statistics"]["non_zeroes"] = len(list_hq)
+            pixel_quality = append_stat(pixel, pixel_quality)
+            pixels[y].append(pixel_quality)
+            if (y*x)%100 == 0: print(y*x)
 
     stats = {
         "info": {
@@ -316,12 +393,26 @@ def frequencies_to_list(frequencies):
             list_out.append(int(keys[i]))
     return list_out
 
+def refresh_at_period_end(periodicity, next_day, current_day):
+    refresh = False
+    if periodicity == "WEEKLY":
+        if int((next_day - current_day).days) >= 7 or next_day.weekday() < current_day.weekday():
+            refresh = True
+    if periodicity == "MONTHLY":
+        if current_day.year != next_day.year or current_day.month != next_day.month:
+            refresh = True
+    if periodicity == "ANNUALLY":
+        if current_day.year != next_day.year:
+            refresh = True
+    return refresh
+
 def get_frequencies_stats(fqs):
     list = frequencies_to_list(fqs)
     list.sort()
     mean = list_mean_value(list)
     median = list_median_value(list)
     stat = {
+        "frequencies": "none",
         "statistics": {
             "mean": mean,
             "mode": list_mode_value(list),
@@ -329,7 +420,7 @@ def get_frequencies_stats(fqs):
             "variance": list_variance_value(list, mean),
             "n_tot": 0,
             "non_zeroes": 0,
-            "zeroes_frequency": 0
+            "zeroes": 0
         },
         "box_plot": {
             "min": list_min_value(list),
@@ -346,9 +437,10 @@ def get_frequencies_stats(fqs):
 def save_periodicity_stats(days_stats, periodicity):
     # periodicity --> WEEKLY, MONTHLY, ANNUALLY
     stats = {}
-    frequencies = {}
-    n_tot = 0
-    non_zeroes = 0
+    frequencies_aq = {}
+    frequencies_hq = {}
+    n_tot = [0, 0]
+    non_zeroes = [0, 0]
     keys = list(days_stats.keys())
     keys.sort()
     day_start = keys[0]
@@ -357,41 +449,70 @@ def save_periodicity_stats(days_stats, periodicity):
         current_day = str_to_date(keys[i])
         if i < len(keys)-1: next_day = str_to_date(keys[i+1])
         # aggregating frequencies
-        f_list = days_stats[keys[i]]["frequencies"]
-        f_keys = list(f_list.keys())
-        for f in range(len(f_keys)):
-            if f_keys[f] not in frequencies.keys():
-                frequencies[f_keys[f]] = f_list[f_keys[f]]
+        f_list_aq = days_stats[keys[i]]["frequencies"][0]
+        f_list_hq = days_stats[keys[i]]["frequencies"][1]
+        f_keys_aq = list(f_list_aq.keys())
+        f_keys_hq = list(f_list_hq.keys())
+        for f in range(len(f_keys_aq)):
+            if f_keys_aq[f] not in frequencies_aq.keys():
+                frequencies_aq[f_keys_aq[f]] = f_list_aq[f_keys_aq[f]]
             else:
-                frequencies[f_keys[f]] += f_list[f_keys[f]]
+                frequencies_aq[f_keys_aq[f]] += f_list_aq[f_keys_aq[f]]
+        for f in range(len(f_keys_hq)):
+            if f_keys_hq[f] not in frequencies_hq.keys():
+                frequencies_hq[f_keys_hq[f]] = f_list_hq[f_keys_hq[f]]
+            else:
+                frequencies_hq[f_keys_hq[f]] += f_list_hq[f_keys_hq[f]]
         # calculating elements presence
-        n_tot += days_stats[keys[i]]["image_statistics"]["n_tot"]
-        non_zeroes += days_stats[keys[i]]["image_statistics"]["non_zeroes"]
-        refresh = False
-        if periodicity == "WEEKLY":
-            if int((next_day - current_day).days) >= 7 or next_day.weekday() < current_day.weekday():
-                refresh = True
-        if periodicity == "MONTHLY":
-            if current_day.year != next_day.year or current_day.month != next_day.month:
-                refresh = True
-        if periodicity == "ANNUALLY":
-            if current_day.year != next_day.year:
-                refresh = True
+        n_tot[0] += days_stats[keys[i]]["statistics"]["n_tot"][0]
+        n_tot[1] += days_stats[keys[i]]["statistics"]["n_tot"][1]
+        non_zeroes[0] += days_stats[keys[i]]["statistics"]["non_zeroes"][0]
+        non_zeroes[1] += days_stats[keys[i]]["statistics"]["non_zeroes"][1]
+        refresh = refresh_at_period_end(periodicity, next_day, current_day)
         if refresh or i == len(keys)-1:
+            stat_quality = {
+                "frequencies": [],
+                "statistics": {
+                    "mean": [],
+                    "mode": [],
+                    "median": [],
+                    "variance": [],
+                    "n_tot": [],
+                    "non_zeroes": [],
+                    "zeroes": [],
+                },
+                "box_plot": {
+                    "min": [],
+                    "quartile_010": [],
+                    "quartile_025": [],
+                    "median": [],
+                    "quartile_075": [],
+                    "quartile_090": [],
+                    "max": [],
+                },
+            }
             if periodicity == "WEEKLY": key = day_start
             if periodicity == "MONTHLY":
                 key = date_to_str(current_day)
                 key = key.split("-")[0] + "-" + key.split("-")[1]
             if periodicity == "ANNUALLY": key = str(current_day.year)
-            stat = get_frequencies_stats(frequencies)
-            stat["statistics"]["n_tot"] = n_tot
-            stat["statistics"]["non_zeroes"] = non_zeroes
-            stat["statistics"]["zeroes_frequency"] = (n_tot-non_zeroes)/n_tot
-            n_tot = 0
-            non_zeroes = 0
-            frequencies = {}
-            stats[key] = stat
+            stat_quality = append_stat(get_frequencies_stats(frequencies_aq), stat_quality)
+            stat_quality = append_stat(get_frequencies_stats(frequencies_hq), stat_quality)
+            stat_quality["statistics"]["n_tot"][0] = n_tot[0]
+            stat_quality["statistics"]["non_zeroes"][0] = non_zeroes[0]
+            stat_quality["statistics"]["zeroes"][0] = (n_tot[0]-non_zeroes[0])
+            stat_quality["statistics"]["n_tot"][1] = n_tot[1]
+            stat_quality["statistics"]["non_zeroes"][1] = non_zeroes[1]
+            stat_quality["statistics"]["zeroes"][1] = (n_tot[1]-non_zeroes[1])
+            n_tot[0] = 0
+            n_tot[1] = 0
+            non_zeroes[0] = 0
+            non_zeroes[1] = 0
+            frequencies_aq = {}
+            frequencies_hq = {}
+            stats[key] = stat_quality
             if i < len(keys)-1: day_start = keys[i+1]
+        if i % 100 == 0: print(i)
     stats["info"] = {"periodicity": periodicity}
     return stats
 
@@ -412,27 +533,27 @@ location_name = location_names[0]
 product_type = product_types[0]
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
-with open(directory_path + "2019.json") as json_file:
+print("reading data file")
+"""with open(directory_path + "2019.json") as json_file:
     data_2019 = json.load(json_file)
 with open(directory_path + "2020.json") as json_file:
     data_2020 = json.load(json_file)
 with open(directory_path + "2021.json") as json_file:
     data_2021 = json.load(json_file)
-
 data_set = dict(data_2019["data"])
 data_set.update(data_2020["data"])
-data_set.update(data_2021["data"])
+data_set.update(data_2021["data"])"""
 
 date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 # !!!!!!!!!!!! CALLING !!!!!!!!!!!!!!!
-save_days_stats_w_quality(data_set, directory_path)
+#save_days_stats(data_set, directory_path)
 #save_period_pixels_stats(data_set, date_start, date_end, location_name, product_type)
 
-"""with open(directory_path + "Statistics/days.json") as json_file:
+with open(directory_path + "Statistics/days.json") as json_file:
     days_stats = json.load(json_file)
 
 tmp = save_periodicity_stats(days_stats, "MONTHLY")
-print(tmp["2021-08"]["statistics"])"""
+print(tmp["2021-08"]["statistics"])
