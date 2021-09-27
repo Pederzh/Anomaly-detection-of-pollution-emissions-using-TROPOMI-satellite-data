@@ -153,45 +153,6 @@ def images_variation_variance(image, next, mean):
     return -1
 
 
-
-def get_image_stats(image):
-    sorted_list = image_to_sorted_list(image)
-    frequencies = image_to_frequencies(sorted_list)
-    median = list_median_value(sorted_list)
-    mode = image_mode_value(frequencies)
-    mean = image_mean_value(image)
-    stats = {
-        "frequencies": frequencies,
-        "image_statistics": {
-            "mean": mean,
-            "mode": mode,
-            "median": median,
-            "variance": image_variance_value(image, mean),
-            "n_tot": image_tot_values(image),
-            "non_zeroes": image_tot_non_zero_values(image),
-            "zeroes_frequency": image_non_zero_values_ratio(image),
-        },
-        "box_plot": {
-            "min": list_min_value(sorted_list),
-            "quartile_010": list_quartile_value(list, 0.10),
-            "quartile_025": list_quartile_value(list, 0.25),
-            "median": median,
-            "quartile_075": list_quartile_value(list, 0.75),
-            "quartile_090": list_quartile_value(list, 0.90),
-            "max": list_max_value(sorted_list),
-        },
-    }
-    return stats
-
-def get_image_stats_and_variation(image, image_next):
-    stats = get_image_stats(image)
-    var_mean = images_variation_mean(image, image_next)
-    stats["next_image_variation"] = {
-        "variation_mean": var_mean,
-        "variation_variance": images_variation_variance(image, image_next, var_mean)
-    }
-    return stats
-
 def date_to_str(date):
     date_str = str(date.year) + "-"
     if (date.month < 10): date_str += "0"
@@ -199,6 +160,7 @@ def date_to_str(date):
     if (date.day < 10): date_str += "0"
     date_str += str(date.day)
     return date_str
+
 
 def str_to_date(str_date):
     str_date = str_date.split("-")
@@ -209,23 +171,80 @@ def str_to_date(str_date):
 
 
 
+
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #                       DAYS STATISTICS GIVEN A DATA SET OF IMAGES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+def get_image_stats(image):
+    sorted_list = image_to_sorted_list(image)
+    frequencies = image_to_frequencies(sorted_list)
+    median = list_median_value(sorted_list)
+    mode = image_mode_value(frequencies)
+    mean = image_mean_value(image)
+    stats = {
+        "frequencies": frequencies,
+        "statistics": {
+            "mean": mean,
+            "mode": mode,
+            "median": median,
+            "variance": image_variance_value(image, mean),
+            "n_tot": image_tot_values(image),
+            "non_zeroes": image_tot_non_zero_values(image),
+            "zeroes_frequency": image_non_zero_values_ratio(image),
+        },
+        "box_plot": {
+            "min": list_min_value(sorted_list),
+            "quartile_010": list_quartile_value(sorted_list, 0.10),
+            "quartile_025": list_quartile_value(sorted_list, 0.25),
+            "median": median,
+            "quartile_075": list_quartile_value(sorted_list, 0.75),
+            "quartile_090": list_quartile_value(sorted_list, 0.90),
+            "max": list_max_value(sorted_list),
+        },
+    }
+    return stats
+
+
+def save_days_stats_w_quality(data, directory_path):
+    stats = {}
+    keys = list(data.keys())
+    print("starting")
+    for i in range(len(keys)):
+        stats[keys[i]] = {}
+        tmp_img = []
+        for y in range(len(data[keys[i]])):
+            tmp_img.append([])
+            for x in range(len(data[keys[i]][y])):
+                tmp_img[y].append(data[keys[i]][y][x][0])
+        # getting all quality image stats
+        stat = get_image_stats(tmp_img)
+        stats[keys[i]]["All_Data_Quality"] = stat
+        # getting high quality image stats
+        for y in range(len(data[keys[i]])):
+            for x in range(len(data[keys[i]][y])):
+                if data[keys[i]][y][x][1] == 0 and data[keys[i]][y][x][0] != -1:
+                    tmp_img[y][x] = -1
+        stat = get_image_stats(tmp_img)
+        stats[keys[i]]["High_Data_Quality"] = stat
+        if i % 100 == 0: print(i)
+    with open(directory_path + "Statistics/" + "days_tmp.json", 'w') as outfile:
+        json.dump(stats, outfile)
 
 
 def save_days_stats(data, directory_path):
     stats = {}
     keys = list(data.keys())
     for i in range(len(keys)):
-        if i != 0:
-            stat = get_image_stats_and_variation(data[keys[i]], data[keys[i - 1]])
-        else:
-            stat = get_image_stats(data[keys[i]])
+        stat = get_image_stats(data[keys[i]])
         stats[keys[i]] = stat
         if i % 100 == 0: print(i)
     with open(directory_path + "Statistics/" + "days.json", 'w') as outfile:
         json.dump(stats, outfile)
+
+
 
 
 
@@ -387,13 +406,13 @@ def save_periodicity_stats(days_stats, periodicity):
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 location_names = ["Bering Strait", "Sabetta Port"]
-product_types = ["CO", "NO2", "CH4"]
+product_types = ["NO2", "CO",  "CH4"]
 
 location_name = location_names[0]
 product_type = product_types[0]
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
-"""with open(directory_path + "2019.json") as json_file:
+with open(directory_path + "2019.json") as json_file:
     data_2019 = json.load(json_file)
 with open(directory_path + "2020.json") as json_file:
     data_2020 = json.load(json_file)
@@ -402,18 +421,18 @@ with open(directory_path + "2021.json") as json_file:
 
 data_set = dict(data_2019["data"])
 data_set.update(data_2020["data"])
-data_set.update(data_2021["data"])"""
+data_set.update(data_2021["data"])
 
 date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 # !!!!!!!!!!!! CALLING !!!!!!!!!!!!!!!
-#save_days_stats(data_set, directory_path)
+save_days_stats_w_quality(data_set, directory_path)
 #save_period_pixels_stats(data_set, date_start, date_end, location_name, product_type)
 
-with open(directory_path + "Statistics/days.json") as json_file:
+"""with open(directory_path + "Statistics/days.json") as json_file:
     days_stats = json.load(json_file)
 
 tmp = save_periodicity_stats(days_stats, "MONTHLY")
-print(tmp["2021-08"]["statistics"])
+print(tmp["2021-08"]["statistics"])"""
