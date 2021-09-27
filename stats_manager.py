@@ -532,8 +532,8 @@ def save_periodicity_stats(days_stats, periodicity, directory_path):
 location_names = ["Bering Strait", "Sabetta Port"]
 product_types = ["NO2", "CO",  "CH4"]
 
-location_name = location_names[0]
-product_type = product_types[0]
+location_name = location_names[1]
+product_type = product_types[2]
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
 """print("reading data file")
@@ -558,4 +558,5 @@ date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, m
 with open(directory_path + "Statistics/days.json") as json_file:
     days_stats = json.load(json_file)
 
-save_periodicity_stats(days_stats, "MONTHLY", directory_path)
+# MONTHLY, WEEKLY, ANNUALLY
+save_periodicity_stats(days_stats, "WEEKLY", directory_path)
