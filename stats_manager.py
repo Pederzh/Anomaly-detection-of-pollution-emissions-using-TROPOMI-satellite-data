@@ -434,7 +434,7 @@ def get_frequencies_stats(fqs):
     }
     return stat
 
-def save_periodicity_stats(days_stats, periodicity):
+def save_periodicity_stats(days_stats, periodicity, directory_path):
     # periodicity --> WEEKLY, MONTHLY, ANNUALLY
     stats = {}
     frequencies_aq = {}
@@ -515,10 +515,8 @@ def save_periodicity_stats(days_stats, periodicity):
         if i % 100 == 0: print(i)
     stats["info"] = {"periodicity": periodicity}
     # saving obj pixels as json file
-    info_name = location_name.strip() + "_" + product_type + "_"
-    file_name = info_name + date_to_str(date_start) + "_" + date_to_str(date_end) + "_STATS"
-    directory_path = "./Data/" + location_name + "/" + product_type + "/Statistics/"
-    with open(directory_path + file_name + ".json", 'w') as outfile:
+    directory_path += "Statistics/"
+    with open(directory_path + periodicity.lower() + ".json", 'w') as outfile:
         json.dump(stats, outfile)
 
 
@@ -534,11 +532,11 @@ def save_periodicity_stats(days_stats, periodicity):
 location_names = ["Bering Strait", "Sabetta Port"]
 product_types = ["NO2", "CO",  "CH4"]
 
-location_name = location_names[1]
-product_type = product_types[2]
+location_name = location_names[0]
+product_type = product_types[0]
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
-print("reading data file")
+"""print("reading data file")
 with open(directory_path + "2019.json") as json_file:
     data_2019 = json.load(json_file)
 with open(directory_path + "2020.json") as json_file:
@@ -547,18 +545,17 @@ with open(directory_path + "2021.json") as json_file:
     data_2021 = json.load(json_file)
 data_set = dict(data_2019["data"])
 data_set.update(data_2020["data"])
-data_set.update(data_2021["data"])
+data_set.update(data_2021["data"])"""
 
 date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 # !!!!!!!!!!!! CALLING !!!!!!!!!!!!!!!
-save_days_stats(data_set, directory_path)
+#save_days_stats(data_set, directory_path)
 #save_period_pixels_stats(data_set, date_start, date_end, location_name, product_type)
 
-"""with open(directory_path + "Statistics/days.json") as json_file:
+with open(directory_path + "Statistics/days.json") as json_file:
     days_stats = json.load(json_file)
 
-tmp = save_periodicity_stats(days_stats, "MONTHLY")
-print(tmp["2021-08"]["statistics"])"""
+save_periodicity_stats(days_stats, "MONTHLY", directory_path)
