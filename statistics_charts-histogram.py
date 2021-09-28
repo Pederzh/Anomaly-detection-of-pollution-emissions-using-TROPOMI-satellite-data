@@ -2,6 +2,7 @@ import datetime
 import json
 from pathlib import Path
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 
 location_names = ["Bering Strait", "Sabetta Port"]
@@ -23,7 +24,7 @@ for i in range(len(product_types)):
 
 date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=8, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=8, day=3, hour=0, minute=0, second=0, microsecond=0)
 date_from = date_start
 date_to = date_start
 
@@ -46,19 +47,24 @@ for day_counter in range(int((date_end - date_start).days)):
 
     for i in range(len(product_types)):
         data = {"date": date_from_str,
-                "value": product_days[product_types[i]][date_from_str]["box_plot"][statistic_type][0]
-                }
+                "value": product_days[product_types[i]][date_from_str]["box_plot"][statistic_type][0] }
         df_array[product_types[i]].append(data)
 
-print(df_array)
+fig_final = go.Figure()
+for i in range(len(product_types)):
+    df = pd.DataFrame(df_array[product_types[i]])
+    #print(df)
+    print(list(df["value"]))
+    #fig[product_types[i]] = go.Histogram(x=df["date"], y=df["value"])
 
-df = pd.DataFrame(df_array)
-print(df)
+fig_final.add_trace(go.Histogram(x=['a', 'b', 'c']))
+fig_final.add_trace(go.Histogram(x=['a', 'b', 'c']))
+# Overlay both histograms
+fig_final.update_layout(barmode='overlay')
+# Reduce opacity to see both histograms
+fig_final.update_traces(opacity=0.75)
+fig_final.show()
 
-fig = px.histogram(df, x="date", y="value")
-
-
-fig.show()
 
 directory_path_save = "./data/" + location_name + "/" + product_type + "/charts"
 Path(directory_path).mkdir(parents=True, exist_ok=True)
