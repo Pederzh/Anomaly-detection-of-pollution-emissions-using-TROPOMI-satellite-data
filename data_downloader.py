@@ -524,4 +524,4 @@ precision = 10000
 
 # FOR SINGLE JSON FROM BOTH HIGH AND ALL QUALITY IMAGES
 precision = 10000
-convert_images_to_json_w_quality(product_type, location_name, precision, date_start, date_end)
+#convert_images_to_json_w_quality(product_type, location_name, precision, date_start, date_end)
