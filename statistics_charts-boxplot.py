@@ -15,7 +15,7 @@ location_names = ["Bering Strait", "Sabetta Port"]
 product_types = ["CO", "NO2", "CH4"]
 
 location_name = location_names[0]
-product_type = product_types[0]
+product_type = product_types[1]
 directory_path = "./Data/" + location_name + "/" + product_type + "/Statistics/"
 
 with open(directory_path + "days.json") as json_file:
