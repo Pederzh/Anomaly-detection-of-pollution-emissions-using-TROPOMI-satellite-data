@@ -164,7 +164,7 @@ date_start = date.replace(year=2019, month=1, day=1, hour=0, minute=0, second=0,
 date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 location_names = ["Bering Strait", "Sabetta Port"]
-product_types = ["CO", "NO2", "CH4"]
+product_types = ["CO", "NO2", "CH4", "SO2"]
 boxplot_types = ["min", "quartile_025", "median", "quartile_075", "max"]
 statistics_types = ["mean", "mode", "median", "variance", "zeroes", "non_zeroes"]
 data_qualities = [0, 1]  # 0 also worst values | 1 is high quality
@@ -172,12 +172,12 @@ data_qualities_text = ["allQ", "highQ"]
 plottings = ["weekend vs weekdays", "days vs days"]
 
 location_name = location_names[0]
-product_type = product_types[0]
+product_type = product_types[3]
 statistcs_type = statistics_types[0]
 d_q = 1
 data_quality = data_qualities[d_q]
 data_quality_text = data_qualities_text[d_q]
-plotting = plottings[1]
+plotting = plottings[0]
 
 directory_path = "./Data/" + location_name + "/" + product_type + "/Statistics/"
 with open(directory_path + "days.json") as json_file:

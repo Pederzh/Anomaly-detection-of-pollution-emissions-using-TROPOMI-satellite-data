@@ -12,7 +12,7 @@ date_from = date_start
 date_to = date_start
 
 location_names = ["Bering Strait", "Sabetta Port"]
-product_types = ["CO", "NO2", "CH4"]
+product_types = ["CO", "NO2", "CH4", "SO2"]
 statistic_types = ["mean", "non_zeroes"]
 special_statistic_type = statistic_types[1] #non_zeroes
 qualities = [0, 1]  # 0 also worst values | 1 is high quality

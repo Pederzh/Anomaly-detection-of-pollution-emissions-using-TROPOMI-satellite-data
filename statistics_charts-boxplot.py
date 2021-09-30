@@ -4,7 +4,7 @@ from pathlib import Path
 import plotly.graph_objects as go
 
 location_names = ["Bering Strait", "Sabetta Port"]
-product_types = ["CO", "NO2", "CH4"]
+product_types = ["CO", "NO2", "CH4", "SO2"]
 qualities = [0, 1]  # 0 also worst values | 1 is high quality
 qualities_text = ["lowQ", "highQ"]
 
