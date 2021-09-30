@@ -530,7 +530,7 @@ def save_periodicity_stats(days_stats, periodicity, directory_path):
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 location_names = ["Bering Strait", "Sabetta Port"]
-product_types = ["NO2", "CO",  "CH4"]
+product_types = ["NO2", "CO",  "CH4", "SO2"]
 
 location_name = location_names[1]
 product_type = product_types[2]

@@ -499,7 +499,7 @@ def convert_images_to_json_w_quality(product_type, location_name, precision, dat
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 values = {
-    "product_types": ["NO2", "CO", "CH4"],
+    "product_types": ["NO2", "CO", "CH4", "SO2"],
     "locations_name": ["Bering Strait", "Sabetta Port"],
     "minQas": ["high", "all"]
 }
