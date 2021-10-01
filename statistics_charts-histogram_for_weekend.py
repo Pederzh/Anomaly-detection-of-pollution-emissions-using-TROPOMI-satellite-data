@@ -110,7 +110,7 @@ def get_weekend_vs_weekdays_chart(days, date_start, date_end, data_quality, loca
 
     df = pd.DataFrame(df_array)
 
-    fig = px.line(df, x="values", y="normalized_frequencies", color="type")
+    fig = px.histogram(df, x="values", y="normalized_frequencies", color="type", barmode="overlay", nbins=50)
     fig.update_xaxes(categoryorder='category ascending')
     fig.show()
     return fig
@@ -171,13 +171,13 @@ data_qualities = [0, 1]  # 0 also worst values | 1 is high quality
 data_qualities_text = ["allQ", "highQ"]
 plottings = ["weekend vs weekdays", "days vs days"]
 
-location_name = location_names[0]
+location_name = location_names[1]
 product_type = product_types[3]
 statistcs_type = statistics_types[0]
 d_q = 1
 data_quality = data_qualities[d_q]
 data_quality_text = data_qualities_text[d_q]
-plotting = plottings[0]
+plotting = plottings[1]
 
 directory_path = "./Data/" + location_name + "/" + product_type + "/Statistics/"
 with open(directory_path + "days.json") as json_file:
@@ -195,11 +195,8 @@ if plotting == "weekend vs weekdays":
 if plotting == "days vs days":
     fig = get_days_vs_days_chart(days, date_start, date_end, data_quality, location_name, product_type)
 
-
-
-"""directory_path_save = "./data/" + location_name + "/" + product_type + "/charts"
+file_name = plotting+"-"+data_quality_text
+directory_path_save = "./data/" + location_name + "/" + product_type + "/charts"
 Path(directory_path).mkdir(parents=True, exist_ok=True)
-file_name = location_name.strip() + "_" + str(product_type) + "_" + data_quality_text + "_" + date_start.strftime(
-    "%Y-%m-%d") + "_" + date_end.strftime("%Y-%m-%d") + "_HISTOGRAM_WEEKEND_VS_WEEKDAYS"
 print(file_name)
-fig.write_html(directory_path_save + "/" + file_name + ".html")"""
+fig.write_html(directory_path_save + "/" + file_name + ".html")
