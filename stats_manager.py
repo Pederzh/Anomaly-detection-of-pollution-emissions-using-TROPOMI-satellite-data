@@ -533,10 +533,10 @@ location_names = ["Bering Strait", "Sabetta Port"]
 product_types = ["NO2", "CO",  "CH4", "SO2"]
 
 location_name = location_names[1]
-product_type = product_types[2]
+product_type = product_types[0]
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
-"""print("reading data file")
+print("reading data file")
 with open(directory_path + "2019.json") as json_file:
     data_2019 = json.load(json_file)
 with open(directory_path + "2020.json") as json_file:
@@ -545,18 +545,18 @@ with open(directory_path + "2021.json") as json_file:
     data_2021 = json.load(json_file)
 data_set = dict(data_2019["data"])
 data_set.update(data_2020["data"])
-data_set.update(data_2021["data"])"""
+data_set.update(data_2021["data"])
 
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2020, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 # !!!!!!!!!!!! CALLING !!!!!!!!!!!!!!!
 #save_days_stats(data_set, directory_path)
-#save_period_pixels_stats(data_set, date_start, date_end, location_name, product_type)
+save_period_pixels_stats(data_set, date_start, date_end, location_name, product_type)
 
-with open(directory_path + "Statistics/days.json") as json_file:
-    days_stats = json.load(json_file)
+"""with open(directory_path + "Statistics/days.json") as json_file:
+    days_stats = json.load(json_file)"""
 
 # MONTHLY, WEEKLY, ANNUALLY
-save_periodicity_stats(days_stats, "ANNUALLY", directory_path)
+#save_periodicity_stats(days_stats, "ANNUALLY", directory_path)

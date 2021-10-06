@@ -42,7 +42,8 @@ def stat_to_image(data, key, precision):
     for y in range(len(data)):
         rgb_matrix.append([])
         for x in range(len(data[y])):
-            value = 255 - int(data[y][x][key] * 255 / precision)
+            #print(data[y][x][key])
+            value = 255 - int(data[y][x]["statistics"][key][0] * 255 / precision)
             if value != -1: rgb_matrix[y].append([value, value, value, 255])
             else: rgb_matrix[y].append([255, 255, 255, 0])
     return rgb_matrix
@@ -58,16 +59,16 @@ def stat_to_image(data, key, precision):
 location_names = ["Bering Strait", "Sabetta Port"]
 product_types = ["CO", "NO2", "CH4"]
 
-location_name = location_names[0]
-product_type = product_types[0]
+location_name = location_names[1]
+product_type = product_types[1]
 directory_path = "./Data/" + location_name + "/" + product_type + "/"
 
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2020, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 precision = 10000
-stats_keys = ["mean", "mode", "min", "min_quartile", "median", "max_quartile", "max", ]
+stats_keys = ["mean", "mode", "median", ]
 
 info_name = location_name.strip() + "_" + product_type + "_"
 file_name = info_name + date_to_str(date_start) + "_" + date_to_str(date_end) + "_STATS"
