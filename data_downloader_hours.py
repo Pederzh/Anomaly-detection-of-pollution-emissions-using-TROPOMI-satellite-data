@@ -2,6 +2,7 @@ import datetime
 import io
 import json
 import math
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 
@@ -32,29 +33,7 @@ token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/tok
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 def get_response (bbox, date_from_str, date_to_str, s_product, dimension, minQa):
-    if s_product == "CH4":
-        product_evalscritp = """
-                    //VERSION=3
-                    function setup() {
-                        return {
-                            input: ["CH4", "dataMask"],
-                                output: { bands:  4}
-                            }
-                        }                                    
-                    const minVal = 1600.0
-                    const maxVal = 2000.0
-                    const diff = maxVal - minVal
-                    const rainbowColors = [
-                        [minVal, [1, 1, 1]],
-                        [maxVal, [0, 0, 0]],
-                    ]
-                    const viz = new ColorRampVisualizer(rainbowColors)
-                    function evaluatePixel(sample) {
-                        var rgba= viz.process(sample.CH4)
-                        rgba.push(sample.dataMask)
-                        return rgba
-                    }
-                    """
+
     if s_product == "NO2":
         product_evalscritp = """
                     //VERSION=3
@@ -82,29 +61,7 @@ def get_response (bbox, date_from_str, date_to_str, s_product, dimension, minQa)
                         return rgba
                     }
                     """
-    if s_product == "CO":
-        product_evalscritp = """
-                    //VERSION=3
-                    function setup() {
-                        return {
-                            input: ["CO", "dataMask"],
-                                output: { bands:  4}
-                            }
-                        }                                    
-                    const minVal = 0.0
-                    const maxVal = 0.1
-                    const diff = maxVal - minVal
-                    const rainbowColors = [
-                        [minVal, [1, 1, 1]],
-                        [maxVal, [0, 0, 0]],
-                    ]
-                    const viz = new ColorRampVisualizer(rainbowColors)
-                    function evaluatePixel(sample) {
-                        var rgba= viz.process(sample.CO)
-                        rgba.push(sample.dataMask)
-                        return rgba
-                    }
-                    """
+
     response = oauth.post('https://creodias.sentinel-hub.com/api/v1/process',
         json={
           "input": {
@@ -135,97 +92,6 @@ def get_response (bbox, date_from_str, date_to_str, s_product, dimension, minQa)
 
 
 
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#               RGB to VALUE
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-def get_min_max_val(product_type):
-    if product_type == "NO2":
-        minVal = 0.0
-        maxVal = 0.0001
-    if product_type == "CO":
-        minVal = 0.0
-        maxVal = 0.1
-    if product_type == "CH4":
-        minVal = 1600.0
-        maxVal = 2000.0
-    return [minVal, maxVal]
-
-def get_rainbow_value( rgb, precision ):
-    values = [0, precision]
-    diff = values[1] - values[0]
-    # [0, 0, 0.5]
-    if rgb[0] == 0 and rgb[1] == 0 and rgb[2] <= 128:
-        return values[0]
-    # [0, 0, 1]
-    if rgb[0] == 0 and rgb[1] == 0:
-        return values[0] + 0.125 * diff * (rgb[2]-128)/128
-    # [0, 1, 1]
-    if rgb[0] == 0:
-        rangeVal = 0.375 - 0.125
-        return (values[0]+0.125*diff) + rangeVal * diff * rgb[1]/255
-    # [1, 1, 0]
-    if rgb[1] == 255:
-        rangeVal = 0.625 - 0.375
-        return (values[0]+0.375*diff) + rangeVal * diff * rgb[0]/255
-    # [1, 0, 0]
-    if rgb[0] == 255 and rgb[1] >= 0:
-        rangeVal = 0.875 - 0.625
-        return (values[0]+0.625*diff) + rangeVal * diff * (255-rgb[1]-128)/255
-    # [0.5, 0, 0]
-    rangeVal = 1.0 - 0.875
-    return (values[0]+0.875*diff) + rangeVal * (2*128-rgb[2])/128
-
-def get_bw_value( rgb, precision):
-    values = [0, precision]
-    diff = values[1] - values[0]
-    return int(values[0] + diff * (255-rgb[0])/255)
-
-
-
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#              CREATING JSON ROW
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-def create_image_matrix(image_array, precision):
-    image_matrix = [[]]
-    image_matrix.clear()
-    for y in range(len(image_array)):
-        image_matrix.append([])
-        for x in range(len(image_array[y])):
-            if image_array[y][x][3] == 0: image_matrix[y].append(-1)
-            else: image_matrix[y].append(get_bw_value(image_array[y][x], precision))
-    return image_matrix
-
-def create_image_matrix_w_quality(image_array_hq, image_array_aq, precision):
-    image_matrix = [[]]
-    image_matrix.clear()
-    for y in range(len(image_array_hq)):
-        image_matrix.append([])
-        for x in range(len(image_array_hq[y])):
-            if image_array_hq[y][x][3] == 0:
-                if image_array_aq[y][x][3] == 0:
-                    image_matrix[y].append([-1, 0])
-                else:
-                    image_matrix[y].append([get_bw_value(image_array_aq[y][x], precision), 0])
-            else:
-                image_matrix[y].append([get_bw_value(image_array_hq[y][x], precision), 1])
-    return image_matrix
-
-def create_json_element(image_array, date, type):
-    values = create_image_matrix(image_array, type)
-    data_set = {
-        "date": date,
-        "values": values}
-    return data_set
-
-
 def get_new_coordinates(lat, lon, distance_lat, distance_lon):
     lat_new = lat + (180 / math.pi) * (distance_lat / 6378137)
     lon_new = lon + (180 / math.pi) * (distance_lon / 6378137) / math.cos(math.pi/180*lat)
@@ -249,56 +115,95 @@ def get_bbox_coordinates_from_center(coordinates, distance):
 
 
 
-def download_hourly_images(product_type, location_name, minQa_info, date_start):
+
+def save_image(image, product_type, location_name):
+    directory_path = "../data/" + product_type + "/" + location_name + "/images/"\
+                     + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") + "/"
+    file_name = image["date"].strftime("%d") + "-" + str(image["time"])
+    Path(directory_path).mkdir(parents=True, exist_ok=True)
+    image["image"].save(directory_path +  file_name + ".png", format="png")
+
+
+def get_hourly_images(product_type, location_name, minQa_info, date_start):
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     #                   PARAMETERS
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # setting coordinates
+    distance_radius = 100000
     if location_name == "Bering Strait":
         bbox_coordinates = [-170.844, 65.396, -167.622, 66.230]
         range_h = 5
     if location_name == "Sabetta Port":
         sabetta_port_coordinates = [71.264765, 72.060155]
-        bbox_coordinates = get_bbox_coordinates_from_center(sabetta_port_coordinates, 100000)
-        range_h = 12
+        bbox_coordinates = get_bbox_coordinates_from_center(sabetta_port_coordinates, distance_radius)
+        range_h = 10.5
     # setting image dimension
-    multiplier = 30
-    width = abs(bbox_coordinates[0] - bbox_coordinates[2])
-    height = abs(bbox_coordinates[1] - bbox_coordinates[3])
-    n_pixel = int(math.sqrt(pow(width, 2) + pow(height, 2)) * multiplier)
-    dimension = {"width": n_pixel, "height": n_pixel}
+    precision = 2000 # meters per pixel
+    img_length = int(distance_radius*2/precision)
+    dimension = {"width": img_length, "height": img_length}
     # min data quality
     if minQa_info == "high": minQa = {}
     else: minQa = {"minQa": 0}
 
     date_from_h = date_start
-    if date_start.year == 2019: date_from_h = date_start + datetime.timedelta(hours=22)
-    if date_start.year == 2020: date_from_h = date_start + datetime.timedelta(hours=21)
-    if date_start.year == 2021: date_from_h = date_start + datetime.timedelta(hours=20)
+    if date_start.year == 2019: date_from_h = date_start + datetime.timedelta(hours=23)
+    if date_start.year == 2020: date_from_h = date_start + datetime.timedelta(hours=23)
+    if date_start.year == 2021: date_from_h = date_start + datetime.timedelta(hours=23)
     date_to_h = date_from_h
-
     for hours_counter in range(int(range_h / 1.5)):
         date_from_h = date_to_h
         date_to_h = date_to_h + datetime.timedelta(hours=1.5)
         date_from_str = [date_from_h.strftime("%Y-%m-%d"), date_from_h.strftime("%H:%M:%S")]
         date_to_str = [date_to_h.strftime("%Y-%m-%d"), date_to_h.strftime("%H:%M:%S")]
         print(date_from_str)
+        # getting post responce
         response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type, dimension, minQa)
         in_memory_file = io.BytesIO(response.content)
         img_png = Image.open(in_memory_file)
-
-        # plotting
-        fig = plt.figure()
+        # pushin the image in the list
+        image = {
+            "date": date_start,
+            "time": hours_counter,
+            "image": img_png
+        }
+        """fig = plt.figure()
         plt.imshow(img_png)
-        plt.show()
+        plt.show()"""
+        save_image(image, product_type, location_name)
 
 
 
 
-
-
-
-
+def rename(product_type, location_name, date_start):
+    if location_name == "Bering Strait":
+        range_h = 5
+    if location_name == "Sabetta Port":
+        range_h = 10.5
+    date_from_h = date_start
+    if date_start.year == 2019: date_from_h = date_start + datetime.timedelta(hours=23)
+    if date_start.year == 2020: date_from_h = date_start + datetime.timedelta(hours=23)
+    if date_start.year == 2021: date_from_h = date_start + datetime.timedelta(hours=23)
+    date_to_h = date_from_h
+    for hours_counter in range(int(range_h / 1.5)):
+        date_from_h = date_to_h
+        date_to_h = date_to_h + datetime.timedelta(hours=1.5)
+        date_from_str = [date_from_h.strftime("%Y-%m-%d"), date_from_h.strftime("%H:%M:%S")]
+        date_to_str = [date_to_h.strftime("%Y-%m-%d"), date_to_h.strftime("%H:%M:%S")]
+        # pushin the image in the list
+        image = {
+            "date": date_start,
+            "time": hours_counter,
+        }
+        directory_path = "../data/" + product_type + "2/" + location_name + "/images/"\
+                     + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") + "/"
+        new_directory_path = "../data/" + product_type + "/" + location_name + "/images/" \
+                         + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") + "/"
+        file_name = image["date"].strftime("%d") + str(image["time"])
+        my_file = Path(directory_path + file_name + ".png")
+        if my_file.is_file():
+            image = Image.open(directory_path +  file_name + ".png")
+            Path(new_directory_path).mkdir(parents=True, exist_ok=True)
+            image.save(new_directory_path + file_name[0] + file_name[1] + "-" + file_name[2] + ".png", format="png")
 
 
 
@@ -319,8 +224,8 @@ values = {
     "minQas": ["high", "all"]
 }
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=5, day=19, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2020, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=5, day=15, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 product_type = values["product_types"][0]
 location_name = values["locations_name"][1]
@@ -330,4 +235,7 @@ minQa = values["minQas"][1]
 # FOR IMAGES DOWNLOAD
 #download_images(product_type, location_name, minQa, date_start, date_end)
 
-download_hourly_images(product_type, location_name, minQa, date_start)
+for day_counter in range(int((date_end - date_start).days)):
+    date = date_start + datetime.timedelta(days=day_counter)
+    #get_hourly_images(product_type, location_name, minQa, date)
+    rename(product_type, location_name, date)
