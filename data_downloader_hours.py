@@ -2,6 +2,7 @@ import datetime
 import io
 import json
 import math
+import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -117,11 +118,12 @@ def get_bbox_coordinates_from_center(coordinates, distance):
 
 
 def save_image(image, product_type, location_name):
-    directory_path = "../data/" + product_type + "/" + location_name + "/images/"\
-                     + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") + "/"
-    file_name = image["date"].strftime("%d") + "-" + str(image["time"])
+    directory_path = "../data/" + product_type + "/" + location_name + "/images/" \
+                         + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") \
+                           + "/" + image["date"].strftime("%d") + "/" + "unprocessed/"
+    file_name = str(image["time"])
     Path(directory_path).mkdir(parents=True, exist_ok=True)
-    image["image"].save(directory_path +  file_name + ".png", format="png")
+    image["image"].save(directory_path + file_name + ".png", format="png")
 
 
 def get_hourly_images(product_type, location_name, minQa_info, date_start):
@@ -174,39 +176,6 @@ def get_hourly_images(product_type, location_name, minQa_info, date_start):
 
 
 
-def rename(product_type, location_name, date_start):
-    if location_name == "Bering Strait":
-        range_h = 5
-    if location_name == "Sabetta Port":
-        range_h = 10.5
-    date_from_h = date_start
-    if date_start.year == 2019: date_from_h = date_start + datetime.timedelta(hours=23)
-    if date_start.year == 2020: date_from_h = date_start + datetime.timedelta(hours=23)
-    if date_start.year == 2021: date_from_h = date_start + datetime.timedelta(hours=23)
-    date_to_h = date_from_h
-    for hours_counter in range(int(range_h / 1.5)):
-        date_from_h = date_to_h
-        date_to_h = date_to_h + datetime.timedelta(hours=1.5)
-        date_from_str = [date_from_h.strftime("%Y-%m-%d"), date_from_h.strftime("%H:%M:%S")]
-        date_to_str = [date_to_h.strftime("%Y-%m-%d"), date_to_h.strftime("%H:%M:%S")]
-        # pushin the image in the list
-        image = {
-            "date": date_start,
-            "time": hours_counter,
-        }
-        directory_path = "../data/" + product_type + "2/" + location_name + "/images/"\
-                     + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") + "/"
-        new_directory_path = "../data/" + product_type + "/" + location_name + "/images/" \
-                         + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") + "/"
-        file_name = image["date"].strftime("%d") + str(image["time"])
-        my_file = Path(directory_path + file_name + ".png")
-        if my_file.is_file():
-            image = Image.open(directory_path +  file_name + ".png")
-            Path(new_directory_path).mkdir(parents=True, exist_ok=True)
-            image.save(new_directory_path + file_name[0] + file_name[1] + "-" + file_name[2] + ".png", format="png")
-
-
-
 
 
 
@@ -224,8 +193,8 @@ values = {
     "minQas": ["high", "all"]
 }
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=5, day=15, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=5, day=16, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=5, day=17, hour=0, minute=0, second=0, microsecond=0)
 
 product_type = values["product_types"][0]
 location_name = values["locations_name"][1]
@@ -237,5 +206,4 @@ minQa = values["minQas"][1]
 
 for day_counter in range(int((date_end - date_start).days)):
     date = date_start + datetime.timedelta(days=day_counter)
-    #get_hourly_images(product_type, location_name, minQa, date)
-    rename(product_type, location_name, date)
+    get_hourly_images(product_type, location_name, minQa, date)
