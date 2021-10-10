@@ -369,8 +369,8 @@ def get_rgb_values(value):
     min = 0.875
     max = 1
     rangeVal = max - min
-    new_value = round(128 + (prop - min) / rangeVal * 127)
-    rgb[2] = 255 - new_value
+    new_value = round(127 - (prop - min) / rangeVal * 127)
+    rgb[0] = 128 + new_value
     return rgb
 
 
@@ -513,11 +513,11 @@ image_type = values["image_types"][1]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #               JSON MEAN OF IMAGES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-create_all_mean_json(product_type, location_name, date_start, date_end, image_type)
+#create_all_mean_json(product_type, location_name, date_start, date_end, image_type)
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #   TO CREATE ALL IMAGES FROM ALL MEAN JSON
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-create_images_from_all_mean_json(product_type, location_name, date_start, date_end, image_type)
+#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, image_type)
 
 
