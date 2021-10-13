@@ -7,10 +7,10 @@ location_name = location_names[1]
 components = ["u", "v"]  # x, y
 
 # making data frame from csv file
-fileU = pd.read_csv("data/" + location_name + "/wind/wind-20190101_20211007-10m_" + components[0] + "-500_600_700_800.csv")
-fileV = pd.read_csv("data/" + location_name + "/wind/wind-20190101_20211007-10m_" + components[1] + "-500_600_700_800.csv")
+fileU = pd.read_csv("./data/" + location_name + "/wind/wind-20190101_20211007-10m_" + components[0] + "-500_600_700_800.csv")
+fileV = pd.read_csv("./data/" + location_name + "/wind/wind-20190101_20211007-10m_" + components[1] + "-500_600_700_800.csv")
 
-fileU = fileU.rename(columns={"Value": "value_U"}, inplace=True)
+fileU.rename(columns={"Value": "value_U"}, inplace=True)
 fileU["value_V"] = fileV["Value"]
 
 fileU['angle'] = 180 + (
