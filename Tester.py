@@ -10,10 +10,11 @@ import numpy
 import plotly.express as px
 import pandas as pd
 import matplotlib.pyplot as plt
+import skimage
 from scipy.ndimage import gaussian_filter
 import scipy as sp
 from scipy.ndimage import rotate
-from scipy import interpolate
+from scipy import interpolate, ndimage
 from scipy.interpolate import griddata, interp2d
 import scipy.ndimage
 import scipy.fftpack
@@ -22,6 +23,10 @@ from scipy import interpolate
 from scipy.interpolate import griddata
 import statistics as stst
 from skimage import measure
+from skimage.filters import threshold_otsu
+import skimage.color
+import skimage.filters
+import glob
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -167,35 +172,33 @@ def reduce_image_dimension(matrix, factor):
 
 
 
-def get_all_peaks(data_set):
+def get_all_peaks(data_set, min_height, prominence):
+    found_peaks = []
+    for y in range(len(data_set)):
+        found_peaks.append([])
+        for x in range(len(data_set[y])):
+            found_peaks[y].append(0)
     # PEAKS
-    data_smoothed = data_set.copy()
-    min_height = 110
-    prominence = 0
+    data_smoothed = copy.deepcopy(data_set)
     perpendiculars_peaks = []
     for i in range(len(data_smoothed[0])):
         signal = get_matrix_column(data_smoothed, i)
         signal = float_array_to_int(signal)
         peaks = list(
-            scipy.signal.find_peaks(signal, height=min_height, threshold=None, distance=None, prominence=prominence,
-                                    width=0, wlen=None,
-                                    rel_height=0.5, plateau_size=None))
+            scipy.signal.find_peaks(signal, height=min_height, prominence=prominence))
         perpendiculars_peaks.append(peaks)
     parallels_peaks = []
     for i in range(len(data_smoothed)):
         signal = float_array_to_int(data_smoothed[i])
         peaks = list(
-            scipy.signal.find_peaks(signal, height=min_height, threshold=None, distance=None, prominence=prominence,
-                                    width=0, wlen=None,
-                                    rel_height=0.5, plateau_size=None))
+            scipy.signal.find_peaks(signal, height=min_height, prominence=prominence))
         parallels_peaks.append(peaks)
-
 
     for y in range(len(data_smoothed)):
         for x in range(len(data_smoothed[y])):
             if x in parallels_peaks[y][0] and y in perpendiculars_peaks[x][0]:
-                data_smoothed[y][x] = -1
-    return data_smoothed
+                found_peaks[y][x] = 1
+    return found_peaks
 
 
 
@@ -652,7 +655,7 @@ def get_sub_points(data, side_len, n):
                     points.append([y, x])
     return points
 
-def get_interpolated_data(data, side_len, what_to_return):
+def get_interpolated_data(data_set, side_len, what_to_return):
     data_mean = []
     final_data = []
     list_of_data_set = []
@@ -1089,12 +1092,12 @@ def fill_white_spaces(data_set):
     data_set = get_interpolated_image(points, data_set)
     return data_set
 
-data_set = get_json_content("../Data/NO2/Sabetta Port/images/2021/05/05/balanced/")["4"]
+"""data_set = get_json_content("../Data/NO2/Sabetta Port/images/2021/05/05/balanced/")["4"]
 data_set = fill_white_spaces(data_set)
 print_image_given_matrix(data_set)
 median_data_set = get_interpolated_data(data_set, 4, "median")
 print_image_given_matrix(median_data_set)
-get_approximated_interpolation_data_set(data_set, 15, 11)
+get_approximated_interpolation_data_set(data_set, 15, 11)"""
 #big_data_set = get_single_interpolated_values(median_data_set, 17, 11)
 #print_image_given_matrix(big_data_set)
 
@@ -1178,7 +1181,48 @@ print_image_given_matrix(peaks)"""
 ########################################################################
 ########################################################################
 
-"""mean_set = []
+
+
+
+
+
+date = datetime.datetime.now()
+date_start = date.replace(year=2021, month=5, day=5, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=5, day=6, hour=0, minute=0, second=0, microsecond=0)
+
+
+
+
+data_set = get_json_content_w_name("../Data/NO2/Sabetta Port/images/2021/05/04/balanced/", "mean")
+
+
+#print_image_given_matrix(data_set)
+
+def get_lowed(data_set):
+    #new_data = ndimage.median_filter(data_set, 5)
+    my_list = []
+    for y in data_set:
+        for x in y:
+            my_list.append(x)
+    thresh = threshold_otsu(data_set)
+    fig, ax = plt.subplots()
+    plt.imshow(thresh)
+    plt.show()
+    #print_image_given_matrix(new_data)
+    return my_list
+
+
+
+
+#sx = ndimage.sobel(data_set, axis=0, mode='constant')
+#sy = ndimage.sobel(data_set, axis=1, mode='constant')
+#sob_data = np.hypot(sx, sy)
+#print_image_given_matrix(sx)
+#print_image_given_matrix(sy)
+#print_image_given_matrix(sob_data)
+
+
+mean_set = []
 values_set = []
 median_set = []
 mode_set = []
@@ -1196,20 +1240,19 @@ for y in range(len(data_set)):
         mean_cleaned_set[y].append(0)
         mode_set[y].append(0)
         values_set[y].append([])
-for month in range(6):
-    month_string = "0" + str(month+4)
-    for counter in range(30):
-        i = counter
-        day_string = ""
-        if i + 1 <= 9: day_string = "0"
-        day_string += str(i + 1)
-        print("working on " + day_string)
-        path_day = "../Data/NO2/Sabetta Port/images/2021/" + month_string + "/" + day_string + "/"
-        data_set = get_json_content_w_name(path_day + "balanced/", "mean")#["3"]
-        #interpolated_data_set = get_final_interpolation(data_set, ["median"])
-        interpolated_data_set = data_set
+for day_counter in range(int((date_end - date_start).days)):
+    date = date_start + datetime.timedelta(days=day_counter)
+    print("at day " + date.strftime("%Y-%m-%d"))
+    directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+    directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
+    directory_path = directory_path + date.strftime("%d") + "/"
+    my_path = Path(directory_path)
+    if my_path.is_dir():
+        data_set = get_json_content_w_name(directory_path + "balanced/", "mean")  # ["3"]
+        # interpolated_data_set = get_final_interpolation(data_set, ["median"])
+        interpolated_data_set = get_lowed(data_set)
         tot += 1
-        #print_image_given_matrix(interpolated_data_set)
+        # print_image_given_matrix(interpolated_data_set)
         for y in range(len(mean_set)):
             for x in range(len(mean_set[y])):
                 mean_set[y][x] = mean_set[y][x] + interpolated_data_set[y][x]
@@ -1219,22 +1262,50 @@ def get_cleaned_mean(list):
     tot = 0
     value = 0
     for i in range(len(list)):
-        if i/(len(list)-1) > 0.25 and i/(len(list)-1) < 0.75:
+        if i/(len(list)-1) > 0.25 and i/(len(list)-1) <= 1.0:
             tot += 1
             value += list[i]
     return value/tot
 
+global_set = []
+for y in range(len(mean_set)):
+    global_set.append([])
+    for x in range(len(mean_set[y])):
+        mean_set[y][x] = round(mean_set[y][x] / tot)
+        values_set[y][x].sort()
+        median_set[y][x] = stst.median(values_set[y][x])
+        mean_cleaned_set[y][x] = get_cleaned_mean(values_set[y][x])
+        global_set[y].append(mean_cleaned_set[y][x])
+        #global_set[y].append((mean_cleaned_set[y][x] + median_set[y][x] + mean_set[y][x])/3)
+        #mode_set[y][x] = stst.mode(values_set[y][x])*9
+
+g_list = []
+for y in range(len(global_set)):
+    for x in range(len(global_set[y])):
+        g_list.append(global_set[y][x])
+max_val = max(g_list)
+
+
+mult = 1
 for y in range(len(mean_set)):
     for x in range(len(mean_set[y])):
-        mean_set[y][x] = round(mean_set[y][x] / tot)*8
-        values_set[y][x].sort()
-        median_set[y][x] = stst.median(values_set[y][x])*8
-        mean_cleaned_set[y][x] = get_cleaned_mean(values_set[y][x])*8
-        mode_set[y][x] = stst.mode(values_set[y][x])*8
+        mean_set[y][x] = mean_set[y][x] * mult
+        median_set[y][x] = median_set[y][x] * mult
+        mean_cleaned_set[y][x] = mean_cleaned_set[y][x] * mult
+        global_set[y][x] = pow(global_set[y][x]/max_val, 2) * max_val
+        global_set[y][x] = global_set[y][x] * mult
 print_image_given_matrix(mean_set)
 print_image_given_matrix(median_set)
+#print_image_given_matrix(global_set)
 print_image_given_matrix(mean_cleaned_set)
-print_image_given_matrix(mode_set)"""
+
+peaks = get_all_peaks(median_set, 80, 0)
+for y in range(len(peaks)):
+    for x in range(len(peaks[y])):
+        peaks[y][x] = peaks[y][x] * 1000
+print_image_given_matrix(peaks)
+
+#print_image_given_matrix(mode_set)
 
 ########################################################################
 ########################################################################

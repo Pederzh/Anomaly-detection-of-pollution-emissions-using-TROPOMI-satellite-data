@@ -193,8 +193,8 @@ values = {
     "minQas": ["high", "all"]
 }
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=5, day=16, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=5, day=17, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2020, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 product_type = values["product_types"][0]
 location_name = values["locations_name"][1]

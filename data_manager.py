@@ -10,6 +10,7 @@ from PIL import Image
 from numpy import array
 import numpy as np
 from scipy.interpolate import griddata
+import scipy.fftpack
 import statistics as stst
 import numpy
 from oauthlib.oauth2 import BackendApplicationClient
@@ -39,6 +40,16 @@ wieghts = {
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+def save_json(directory_path, json_file, json_file_name):
+    Path(directory_path).mkdir(parents=True, exist_ok=True)
+    with open(directory_path + json_file_name + ".json", 'w') as outfile:
+        json.dump(json_file, outfile)
+
+def print_image_given_matrix(matrix):
+    image = create_image_from_matrix(matrix)
+    plt.imshow(image)
+    plt.show()
 
 def get_new_coordinates(lat, lon, distance_lat, distance_lon):
     lat_new = lat + (180 / math.pi) * (distance_lat / 6378137)
@@ -100,6 +111,7 @@ def get_list_from_matrix(matrix):
     return my_list
 
 def remove_zeroes_from_sorted_list(sorted_list):
+    if sorted_list[len(sorted_list)-1] == -1: return []
     while sorted_list[0] == -1:
         del sorted_list[0]
     return sorted_list
@@ -198,142 +210,68 @@ def create_all_json_from_images(product_type, location_name, date_start, date_en
 
 
 
+
+
+
+
+
+
+
+
+
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
-#                                   FOR CREATING BALANCED JSON
+#                                   FOR CREATING FILLED JSON
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+def is_to_save(data_set):
+    list_set = get_list_from_matrix(data_set)
+    original_len = len(list_set)
+    list_set.sort()
+    list_set = remove_zeroes_from_sorted_list(list_set)
+    if len(list_set) / original_len <= 0.5: return False
+    freq_set = get_frequencies_from_list(list_set)
+    for k in list(freq_set.keys()):
+        if freq_set[k] / len(list_set) >= 0.75: return False
+    return True
 
+def fill_white_spaces(data_set):
+    points = []
+    for y in range(len(data_set)):
+        for x in range(len(data_set[y])):
+            if data_set[y][x] != -1 and data_set[y][x] != None:
+                points.append([y, x])
+    data_set = get_interpolated_image(points, data_set)
+    return data_set
 
-def get_image_distribution(data):
-    sorted_list = get_list_from_matrix(data)
-    sorted_list.sort()
-    sorted_list = remove_zeroes_from_sorted_list(sorted_list)
-    percentile = 0.1
-    n_tot = int(len(sorted_list) * percentile)
-    return {
-        "inf_out": sorted_list[round(len(sorted_list)*0.05)-1],
-        "inf": sorted_list[round(len(sorted_list)*0.25)-1],
-        "median": sorted_list[round(len(sorted_list)*0.5)-1],
-        "sup": sorted_list[round(len(sorted_list)*0.75)-1],
-        "sup_out": sorted_list[round(len(sorted_list)*0.95)-1],
-    }
-
-def get_image_dir_distribution(data):
-    tot = 0
-    stats = {}
-    balancer = {
-        "inf_out": 0,
-        "inf": 0,
-        "median": 0,
-        "sup": 0,
-        "sup_out": 0,
-    }
-    keys = list(data.keys())
-    for i in range(len(keys)):
-        stat = get_image_distribution(data[keys[i]])
-        stats[keys[i]] = stat
-    if "3" in keys or "4" in keys or "5" in keys:
-        if "5" in keys:
-            weight = 2
-            s_keys = list(stats["5"].keys())
-            for sk in range(len(s_keys)):
-                balancer[s_keys[sk]] += stats["5"][s_keys[sk]] * weight
-            tot += weight
-        if "4" in keys:
-            weight = 10
-            s_keys = list(stats["4"].keys())
-            for sk in range(len(s_keys)):
-                balancer[s_keys[sk]] += stats["4"][s_keys[sk]] * weight
-            tot += weight
-        if "3" in keys:
-            weight = 5
-            s_keys = list(stats["3"].keys())
-            for sk in range(len(s_keys)):
-                balancer[s_keys[sk]] += stats["3"][s_keys[sk]] * weight
-            tot += weight
-    else:
-        for i in range(len(keys)):
-            s_keys = list(stats[keys[i]].keys())
-            for sk in range(len(s_keys)):
-                balancer[s_keys[sk]] += stats[keys[i]][s_keys[sk]]
-            tot += 1
-    s_keys = list(balancer.keys())
-    for sk in range(len(s_keys)):
-        balancer[s_keys[sk]] = round(balancer[s_keys[sk]] / tot, 3)
-    stats["balancer"] = balancer
-    return stats
-
-def get_balanced_value(value, my_stats, new_stats):
-    if value == -1: return -1
-    if value <= my_stats["inf_out"]:
-        my_min = 0
-        my_max = my_stats["inf_out"]
-        new_min = 0
-        new_max = new_stats["inf_out"]
-    if (value >= my_stats["inf_out"]) and (value <= my_stats["inf"]):
-        my_min = my_stats["inf_out"]
-        my_max = my_stats["inf"]
-        new_min = new_stats["inf_out"]
-        new_max = new_stats["inf"]
-    if (value >= my_stats["inf"]) and (value <= my_stats["median"]):
-        my_min = my_stats["inf"]
-        my_max = my_stats["median"]
-        new_min = new_stats["inf"]
-        new_max = new_stats["median"]
-    if (value >= my_stats["median"]) and (value <= my_stats["sup"]):
-        my_min = my_stats["median"]
-        my_max = my_stats["sup"]
-        new_min = new_stats["median"]
-        new_max = new_stats["sup"]
-    if (value >= my_stats["sup"]) and (value <= my_stats["sup_out"]):
-        my_min = my_stats["sup"]
-        my_max = my_stats["sup_out"]
-        new_min = new_stats["sup"]
-        new_max = new_stats["sup_out"]
-    if value >= my_stats["sup_out"]:
-        my_min = my_stats["sup_out"]
-        my_max = 1016
-        new_min = new_stats["sup_out"]
-        new_max = 1016
-    my_range = my_max - my_min
-    new_range = new_max - new_min
-    if (my_range == 0): my_range = new_range
-    value = value - my_min
-    value = value * new_range / my_range
-    value = value + new_min
-    return value
-
-def get_all_balanced_matrix(data, stats):
-    keys = list(data.keys())
-    for i in range(len(keys)):
-        matrix = data[keys[i]]
-        for y in range(len(matrix)):
-            for x in range(len(matrix[y])):
-                data[keys[i]][y][x] = int(get_balanced_value(matrix[y][x], stats[keys[i]], stats["balancer"]))
-    return data
-
-def save_json(directory_path, json_file, json_file_name):
-    Path(directory_path).mkdir(parents=True, exist_ok=True)
-    with open(directory_path + json_file_name + ".json", 'w') as outfile:
-        json.dump(json_file, outfile)
-
-
-def create_balanced_dir_json(directory_path):
+def create_filled_dir_json(directory_path):
     my_path = Path(directory_path+"unprocessed/")
     if my_path.is_dir():
         my_file = Path(directory_path+"unprocessed/data.json")
         if my_file.is_file():
             data_set = get_json_content(directory_path+"unprocessed/")
-            stats = get_image_dir_distribution(data_set)
-            data_set = get_all_balanced_matrix(data_set, stats)
-            save_json(directory_path+"balanced/", data_set, "data")
+            new_data_set = {}
+            keys = list(data_set.keys())
+            for i in range(len(keys)):
+                if is_to_save(data_set[keys[i]]):
+                    is_there_any_white_space = False
+                    for column in data_set[keys[i]]:
+                        for value in column:
+                            if value == -1 or value == None:
+                                is_there_any_white_space = True
+                    if is_there_any_white_space:
+                        new_data_set[keys[i]] = fill_white_spaces(data_set[keys[i]])
+                    else:
+                        new_data_set[keys[i]] = data_set[keys[i]]
+            if len(list(new_data_set.keys())) > 0:
+                save_json(directory_path + "filled/", new_data_set, "data")
 
 
-def create_all_balanced_json(product_type, location_name, date_start, date_end):
+def create_all_filled_json(product_type, location_name, date_start, date_end):
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
@@ -342,7 +280,16 @@ def create_all_balanced_json(product_type, location_name, date_start, date_end):
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
         if my_path.is_dir():
-            create_balanced_dir_json(directory_path)
+            create_filled_dir_json(directory_path)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -471,6 +418,25 @@ def get_interpolated_data(data_set, side_len, what_to_return):
                 final_data[y][x] = min_val
         return final_data
 
+    if what_to_return == "cleaned_mean":
+        for y in range(len(data_mean)):
+            for x in range(len(data_mean[y])):
+                values_list = []
+                for i in range(len(list_of_data_set)):
+                    if list_of_data_set[i][y][x] != -1: values_list.append(list_of_data_set[i][y][x])
+                values_list.sort()
+                new_list = []
+                if len(values_list) == 1 or len(values_list) == 2:
+                    new_list = values_list
+                for i in range(len(values_list)):
+                    if (i + 1) / len(values_list) >= 0.1 and (i + 1) / len(values_list) <= 0.9:
+                        new_list.append(values_list[i])
+                if len(new_list) > 0:
+                    final_data[y][x] = round(stst.mean(new_list))
+                else:
+                    final_data[y][x] = -1
+        return final_data
+
 def get_mean_of_interpolated_data(data_set, side_lens, mean_type):
     final_data = []
     tot = 0
@@ -489,9 +455,7 @@ def get_mean_of_interpolated_data(data_set, side_lens, mean_type):
             final_data[y][x] = final_data[y][x] / tot
     return final_data
 
-def get_final_interpolated_data(data_set):
-    side_lens = [2, 3, 4, 5]
-    mean_types = ["closer_to_mean", "median"]
+def get_final_interpolated_data(data_set, side_lens, mean_types):
     final_data = []
     for y in range(len(data_set)):
         final_data.append([])
@@ -509,15 +473,15 @@ def get_final_interpolated_data(data_set):
     return final_data
 
 def create_interpolated_dir_json(directory_path):
-    my_path = Path(directory_path+"balanced/")
+    my_path = Path(directory_path+"filled/")
     if my_path.is_dir():
-        my_file = Path(directory_path+"balanced/data.json")
+        my_file = Path(directory_path+"filled/data.json")
         if my_file.is_file():
-            data_set = get_json_content(directory_path+"balanced/")
+            data_set = get_json_content(directory_path+"filled/")
             new_data_set = {}
             keys = list(data_set.keys())
             for i in range(len(keys)):
-                new_data_set[keys[i]] = get_final_interpolated_data(data_set[keys[i]])
+                new_data_set[keys[i]] = get_interpolated_data(data_set[keys[i]], 3, "cleaned_mean")
             save_json(directory_path+"interpolated/", new_data_set, "data")
 
 def create_all_interpolated_json(product_type, location_name, date_start, date_end):
@@ -536,42 +500,62 @@ def create_all_interpolated_json(product_type, location_name, date_start, date_e
 
 
 
+
+
+
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
-#                                   FOR IMAGES WITH LOWED NOISE
+#                                   FOR IMAGES WITH LOWED BACKGROUND
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-def remove_missing_data(list):
-    list_new = list.copy()
-    while None in list_new or -1 in list_new:
-        if -1 in list_new:
-            list_new.remove(-1)
-        if None in list:
-            list_new.remove(-1)
-    return list_new
-
-def get_sorted_list_from_matrix(matrix):
-    list = []
-    for y in range(len(matrix)):
-        list += matrix[y]
-    list = remove_missing_data(list)
-    list.sort()
-    return list
-
-def get_data_with_lowed_noise(data):
-    new_data = data.copy()
-    list = get_sorted_list_from_matrix(data)
-    min_range = stst.mean(list)
-    for y in range(len(new_data)):
-        for x in range(len(new_data[y])):
-            if new_data[y][x] != None and new_data[y][x] != -1:
-                if new_data[y][x] <= min_range: new_data[y][x] = min_range
-                new_data[y][x] -= min_range
+def get_matrix_low_pass_filtered(data, keep_fraction):
+    freq_scan = scipy.fftpack.fft2(data)
+    im_fft2 = freq_scan.copy()
+    r, c = im_fft2.shape
+    im_fft2[int(r * keep_fraction):int(r * (1 - keep_fraction))] = 0
+    im_fft2[:, int(c * keep_fraction):int(c * (1 - keep_fraction))] = 0
+    signal_lowpass = scipy.fftpack.ifft2(im_fft2).real
+    new_data = []
+    for y in range(len(signal_lowpass)):
+        new_data.append([])
+        for x in range(len(signal_lowpass[y])):
+            new_data[y].append(round(signal_lowpass[y][x]))
+            if new_data[y][x] < 0: new_data[y][x] = 0
     return new_data
+
+def get_lowed_image(data_set, data_range):
+    values_set = []
+    freq_set = []
+    lowed = 0
+    for row in data_set:
+        for value in row:
+            values_set.append(value)
+    min_val = min(values_set)
+    max_val = max(values_set)
+    tot_freq = (max_val - min_val) / data_range
+    for i in range(int(tot_freq)+1):
+        freq_set.append(0)
+    for value in values_set:
+        freq_set[int((value - min_val) / data_range)] += 1
+    max_freq = max(freq_set)
+    for i in range(len(freq_set)):
+        if freq_set[i] == max_freq:
+            lowed = min_val + (i+2) * data_range
+            break
+    new_data_set = []
+    for y in range(len(data_set)):
+        new_data_set.append([])
+        for x in range(len(data_set[y])):
+            #new_data_set[y].append(0)
+            #if data_set[y][x] > lowed: new_data_set[y][x] = data_set[y][x]
+            new_data_set[y].append(data_set[y][x] - lowed)
+            if new_data_set[y][x] < 0: new_data_set[y][x] = 0
+    return new_data_set
 
 def create_lowed_dir_json(directory_path):
     my_path = Path(directory_path+"balanced/")
@@ -582,7 +566,7 @@ def create_lowed_dir_json(directory_path):
             new_data_set = {}
             keys = list(data_set.keys())
             for i in range(len(keys)):
-                new_data_set[keys[i]] = get_data_with_lowed_noise(data_set[keys[i]])
+                new_data_set[keys[i]] = get_lowed_image(data_set[keys[i]], 10)
             save_json(directory_path+"lowed/", new_data_set, "data")
 
 def create_all_lowed_json(product_type, location_name, date_start, date_end):
@@ -595,6 +579,161 @@ def create_all_lowed_json(product_type, location_name, date_start, date_end):
         my_path = Path(directory_path)
         if my_path.is_dir():
             create_lowed_dir_json(directory_path)
+
+
+
+
+
+
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+#                                   FOR CREATING BALANCED JSON
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+def get_image_distribution(data):
+    sorted_list = get_list_from_matrix(data)
+    sorted_list.sort()
+    sorted_list = remove_zeroes_from_sorted_list(sorted_list)
+    percentile = 0.1
+    n_tot = int(len(sorted_list) * percentile)
+    return {
+        "inf_out": sorted_list[round(len(sorted_list)*0.05)-1],
+        "inf": sorted_list[round(len(sorted_list)*0.25)-1],
+        "median": sorted_list[round(len(sorted_list)*0.5)-1],
+        "sup": sorted_list[round(len(sorted_list)*0.75)-1],
+        "sup_out": sorted_list[round(len(sorted_list)*0.95)-1],
+    }
+
+def get_image_dir_distribution(data):
+    tot = 0
+    stats = {}
+    balancer = {
+        "inf_out": 0,
+        "inf": 0,
+        "median": 0,
+        "sup": 0,
+        "sup_out": 0,
+    }
+    keys = list(data.keys())
+    for i in range(len(keys)):
+        stat = get_image_distribution(data[keys[i]])
+        stats[keys[i]] = stat
+    if "3" in keys or "4" in keys or "5" in keys:
+        if "5" in keys:
+            weight = 2
+            s_keys = list(stats["5"].keys())
+            for sk in range(len(s_keys)):
+                balancer[s_keys[sk]] += stats["5"][s_keys[sk]] * weight
+            tot += weight
+        if "4" in keys:
+            weight = 10
+            s_keys = list(stats["4"].keys())
+            for sk in range(len(s_keys)):
+                balancer[s_keys[sk]] += stats["4"][s_keys[sk]] * weight
+            tot += weight
+        if "3" in keys:
+            weight = 5
+            s_keys = list(stats["3"].keys())
+            for sk in range(len(s_keys)):
+                balancer[s_keys[sk]] += stats["3"][s_keys[sk]] * weight
+            tot += weight
+    else:
+        for i in range(len(keys)):
+            s_keys = list(stats[keys[i]].keys())
+            for sk in range(len(s_keys)):
+                balancer[s_keys[sk]] += stats[keys[i]][s_keys[sk]]
+            tot += 1
+    s_keys = list(balancer.keys())
+    for sk in range(len(s_keys)):
+        balancer[s_keys[sk]] = round(balancer[s_keys[sk]] / tot, 3)
+    stats["balancer"] = balancer
+    return stats
+
+def get_balanced_value(value, my_stats, new_stats):
+    if value == -1: return -1
+    if value < my_stats["inf_out"]:
+        my_min = 0
+        my_max = my_stats["inf_out"]
+        new_min = 0
+        new_max = new_stats["inf_out"]
+    if (value >= my_stats["inf_out"]) and (value < my_stats["inf"]):
+        my_min = my_stats["inf_out"]
+        my_max = my_stats["inf"]
+        new_min = new_stats["inf_out"]
+        new_max = new_stats["inf"]
+    if (value >= my_stats["inf"]) and (value < my_stats["median"]):
+        my_min = my_stats["inf"]
+        my_max = my_stats["median"]
+        new_min = new_stats["inf"]
+        new_max = new_stats["median"]
+    if (value >= my_stats["median"]) and (value < my_stats["sup"]):
+        my_min = my_stats["median"]
+        my_max = my_stats["sup"]
+        new_min = new_stats["median"]
+        new_max = new_stats["sup"]
+    if (value >= my_stats["sup"]) and (value < my_stats["sup_out"]):
+        my_min = my_stats["sup"]
+        my_max = my_stats["sup_out"]
+        new_min = new_stats["sup"]
+        new_max = new_stats["sup_out"]
+    if value >= my_stats["sup_out"]:
+        my_min = my_stats["sup_out"]
+        my_max = 1016
+        new_min = new_stats["sup_out"]
+        new_max = 1016
+    my_range = my_max - my_min
+    new_range = new_max - new_min
+    if (my_range == 0): my_range = new_range
+    if (my_range == 0): return (value - my_min + new_min)
+    value = value - my_min
+    value = value * new_range / my_range
+    value = value + new_min
+    return value
+
+def get_all_balanced_matrix(data, stats):
+    keys = list(data.keys())
+    for i in range(len(keys)):
+        matrix = data[keys[i]]
+        for y in range(len(matrix)):
+            for x in range(len(matrix[y])):
+                data[keys[i]][y][x] = int(get_balanced_value(matrix[y][x], stats[keys[i]], stats["balancer"]))
+    return data
+
+
+def create_balanced_dir_json(directory_path):
+    my_path = Path(directory_path+"interpolated/")
+    if my_path.is_dir():
+        my_file = Path(directory_path+"interpolated/data.json")
+        if my_file.is_file():
+            data_set = get_json_content(directory_path+"interpolated/")
+            stats = get_image_dir_distribution(data_set)
+            data_set = get_all_balanced_matrix(data_set, stats)
+            save_json(directory_path+"balanced/", data_set, "data")
+
+
+def create_all_balanced_json(product_type, location_name, date_start, date_end):
+    for day_counter in range(int((date_end - date_start).days)):
+        date = date_start + datetime.timedelta(days=day_counter)
+        print("at day " + date.strftime("%Y-%m-%d"))
+        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
+        directory_path = directory_path + date.strftime("%d") + "/"
+        my_path = Path(directory_path)
+        if my_path.is_dir():
+            create_balanced_dir_json(directory_path)
+
+
+
+
+
+
+
 
 
 
@@ -812,8 +951,8 @@ values = {
     "image_types": ["unprocessed", "balanced", "lowed", "interpolated", ]
 }
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=5, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=6, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 product_type = values["product_types"][0]
 location_name = values["locations_name"][1]
@@ -823,7 +962,41 @@ image_type = values["image_types"][2]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #           TO CREATE ALL JSON FILES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_json_from_images(product_type, location_name, date_start, date_end, image_type)
+#create_all_json_from_images(product_type, location_name, date_start, date_end, "unprocessed")
+
+
+
+
+
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#       TO CREATE FILLED JSON FILES
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#create_all_filled_json(product_type, location_name, date_start, date_end)
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#   TO CREATE ALL IMAGES FROM FILLED JSON
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#create_images_from_all_json(product_type, location_name, date_start, date_end, "filled")
+
+
+
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#       TO CREATE INTERPOLATED JSON FILES
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#create_all_interpolated_json(product_type, location_name, date_start, date_end)
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#   TO CREATE ALL IMAGES FROM INTERPOLATED JSON
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#create_images_from_all_json(product_type, location_name, date_start, date_end, "interpolated")
+
+
+
+
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #       TO CREATE BALANCED JSON FILES
@@ -835,15 +1008,7 @@ image_type = values["image_types"][2]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #create_images_from_all_json(product_type, location_name, date_start, date_end, "balanced")
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#               JSON MEAN OF IMAGES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   TO CREATE ALL IMAGES FROM ALL MEAN JSON
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
 
 
 
@@ -857,39 +1022,32 @@ image_type = values["image_types"][2]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #create_images_from_all_json(product_type, location_name, date_start, date_end, "lowed")
 
+
+
+
+
+
+
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #               JSON MEAN OF IMAGES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#create_all_mean_json(product_type, location_name, date_start, date_end, "filled")
+#create_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
+#create_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
 #create_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #   TO CREATE ALL IMAGES FROM ALL MEAN JSON
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "filled")
+#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
+#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
 #create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
 
 
 
 
 
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#       TO CREATE INTERPOLATED JSON FILES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-create_all_interpolated_json(product_type, location_name, date_start, date_end)
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   TO CREATE ALL IMAGES FROM INTERPOLATED JSON
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-create_images_from_all_json(product_type, location_name, date_start, date_end, "interpolated")
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#               JSON MEAN OF IMAGES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-create_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   TO CREATE ALL IMAGES FROM ALL MEAN JSON
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
