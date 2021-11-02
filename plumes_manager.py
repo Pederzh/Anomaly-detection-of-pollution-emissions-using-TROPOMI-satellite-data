@@ -1083,7 +1083,7 @@ def create_dir_mean_from_json(directory_path):
         data_set = get_json_content(directory_path)
         keys = list(data_set.keys())
         for j in range(round(len(keys)*0.2)):
-            i = j + round(len(keys)*0)
+            i = j + round(len(keys)*0.8)
             for y in range(len(data_set[keys[i]])):
                 if len(mean_matrix) == y:
                     mean_matrix.append([])
@@ -1146,25 +1146,10 @@ additional_images_path = "images/"
 
 #get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
 
-#mean = create_all_mean_json(product_type, location_name, 2)
-#print_image_given_matrix(mean)
+mean = create_all_mean_json(product_type, location_name, 3)
+print_image_given_matrix(mean)
 
 
-
-def get_matrix_low_pass_filtered(data, keep_fraction):
-    freq_scan = scipy.fftpack.fft2(data)
-    im_fft2 = freq_scan.copy()
-    r, c = im_fft2.shape
-    im_fft2[int(r * keep_fraction):int(r * (1 - keep_fraction))] = 0
-    im_fft2[:, int(c * keep_fraction):int(c * (1 - keep_fraction))] = 0
-    signal_lowpass = scipy.fftpack.ifft2(im_fft2).real
-    new_data = []
-    for y in range(len(signal_lowpass)):
-        new_data.append([])
-        for x in range(len(signal_lowpass[y])):
-            new_data[y].append(round(signal_lowpass[y][x]))
-            if new_data[y][x] < 0: new_data[y][x] = 0
-    return new_data
 
 """data_set = get_json_content_w_name(directory_path+"images/2021/05/03/balanced/", "mean")
 data_set = get_lowed_image(data_set, 10)

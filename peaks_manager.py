@@ -1026,8 +1026,8 @@ minQa = values["minQas"][1]
 image_type = values["image_types"][1]
 
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2020, month=5, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2020, month=6, day=1, hour=0, minute=0, second=0, microsecond=0)
 data_range = 30
 
 directory_path = "../data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
@@ -1036,4 +1036,7 @@ directory_path = "../data/" + product_type + "/" + location_name + "/range_data/
 
 #create_images_from_json(directory_path, "data")
 
-get_range_peaks(directory_path, "data")
+#get_range_peaks(directory_path, "data")
+
+data_set = calculate_means(date_start, date_end)
+print_image_given_matrix(data_set)
