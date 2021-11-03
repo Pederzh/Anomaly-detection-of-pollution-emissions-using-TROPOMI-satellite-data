@@ -206,9 +206,13 @@ print("from file: " + directory_path + file_name)
 directory_path = "../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_2/"
 data_set = get_json_content_w_name(directory_path, "data")
 directory_path = "../Data/NO2/Sabetta Port/images/2021/05/03/lowed/"
-data_set = get_json_content_w_name(directory_path, "mean")
+file_name = "mean"
+directory_path = "../Data/NO2/Sabetta Port/range_data/30/"
+file_name = "data"
+data_set = get_json_content_w_name(directory_path, file_name)["2021-04-01"]
 
-
+directory_write = "../Thesis images/"
+file_write = "2021-04-01"
 
 
 data = data_set
@@ -246,8 +250,8 @@ geotransform = (xmin, xres, 0, ymax, 0, -yres)
 info_name_write = location_name.strip() + "_" + product_type + "_"
 file_name_write = info_name_write + date_start.strftime("%Y-%m-%d") + "_" + date_end.strftime("%Y-%m-%d") + "_" + key + "_GEOTIF"
 directory_path_write = "./data/" + location_name + "/" + product_type + "/geotiff/"
-directory_path_write = "../Thesis images/"
-file_name_write = "test"
+directory_path_write = directory_write
+file_name_write = file_write
 
 # create the 3-band raster file
 dst_ds = gdal.GetDriverByName('GTiff').Create(directory_path_write + file_name_write + '.tif', ny, nx, 4, gdal.GDT_Byte)

@@ -1192,7 +1192,7 @@ additional_images_path = "images/"
 
 #get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
 
-get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
+#get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
 
 #mean = create_all_mean_json(product_type, location_name, 3)
 #print_image_given_matrix(mean)
