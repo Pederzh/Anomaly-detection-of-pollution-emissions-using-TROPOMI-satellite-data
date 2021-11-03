@@ -138,6 +138,7 @@ def get_hourly_images(product_type, location_name, minQa_info, date_start):
     if location_name == "Sabetta Port":
         sabetta_port_coordinates = [71.264765, 72.060155]
         bbox_coordinates = get_bbox_coordinates_from_center(sabetta_port_coordinates, distance_radius)
+        print(bbox_coordinates)
         range_h = 10.5
     # setting image dimension
     precision = 2000 # meters per pixel
