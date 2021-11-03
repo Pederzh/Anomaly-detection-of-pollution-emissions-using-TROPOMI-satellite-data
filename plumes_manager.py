@@ -30,13 +30,11 @@ from numpy import array
 
 
 
-#min_peak_height = 70
 min_peak_height = 33.3
 og_min_peaks_distance = 0.3
 min_peaks_distance = 0.3
 min_shape_border = 0.5
-distance_level = 30 #min_peak_height - 30
-
+distance_level = 30
 
 
 
@@ -190,7 +188,10 @@ def print_image_given_plumes(data):
                 matrix[y].append(0)
             else:
                 if data[y][x]["id"] == -1: matrix[y].append(data[y][x]["id"])
-                else: matrix[y].append(data[y][x]["id"] * 50)
+                else:
+                    if data[y][x]["id"] == 1: matrix[y].append(1000)
+                    else: matrix[y].append(200)
+                    #matrix[y].append(data[y][x]["id"] * 50)
     print_image_given_matrix(matrix)
 
 def get_matrix_shapes_from_peak(data, peak_level):
@@ -955,7 +956,7 @@ def get_single_plume(data_set, plumes, point_id):
                 }
     return plume
 
-def get_image_gaussian_plume_given_poi(data_set, plumes, point):
+def get_image_gaussian_plume_given_poi(data_set, plumes, point, format):
     point_id = get_point_plume_id(plumes, point)
     print_plume = []
     for y in range(len(plumes)):
@@ -965,7 +966,7 @@ def get_image_gaussian_plume_given_poi(data_set, plumes, point):
             if plumes[y][x] != None:
                 if plumes[y][x]["id"] != point_id:
                     print_plume[y][x] = None
-    # print_image_given_plumes(print_plume)
+    #print_image_given_plumes(print_plume)
     if point_id != 0:
         plume = get_single_plume(data_set, plumes, point_id)
         params = get_gaussian_parameters(data_set, plume, point_id)
@@ -977,11 +978,9 @@ def get_image_gaussian_plume_given_poi(data_set, plumes, point):
             for x in range(len(data_set[y])):
                 gauss_plume[y].append(0)
     return gauss_plume
-    # print_image_given_matrix(image_1)
 
-def get_image_gaussian_plumes(data_set, peaks):
+def get_image_gaussian_plumes(data_set, peaks, format):
     #print_image_given_matrix(data_set)
-    #point = [65, 80]
     gaussian_shapes = {}
     max_val = 0
     for elems in data_set:
@@ -991,7 +990,7 @@ def get_image_gaussian_plumes(data_set, peaks):
     plumes = get_matrix_shapes_from_peak(data_set, max_val)
     #print_image_given_plumes(plumes)
     for peak in peaks:
-        image_set = get_image_gaussian_plume_given_poi(data_set, plumes, peak["point"])
+        image_set = get_image_gaussian_plume_given_poi(data_set, plumes, peak["point"], format)
         gaussian_shapes[str(peak["id"])] = image_set
         #print_image_given_matrix(image_set)
     return gaussian_shapes
@@ -1015,7 +1014,7 @@ def get_all_images_plumes(directory_path, additional_peaks_path, additional_imag
             if my_file.is_file():
                 data_set = get_json_content_w_name(directory_img_path, "mean")
                 data_set = get_lowed_image(data_set, 10)
-                gaussian_shapes = get_image_gaussian_plumes(data_set, peaks)
+                gaussian_shapes = get_image_gaussian_plumes(data_set, peaks, "image")
                 for peak in peaks:
                     if str(peak["id"]) not in gaussian_shape_list.keys():
                         gaussian_shape_list[str(peak["id"])] = {}
@@ -1146,10 +1145,14 @@ additional_images_path = "images/"
 
 #get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
 
-mean = create_all_mean_json(product_type, location_name, 3)
-print_image_given_matrix(mean)
+#mean = create_all_mean_json(product_type, location_name, 3)
+#print_image_given_matrix(mean)
 
 
+
+data_set = get_json_content_w_name(directory_path+"images/2021/04/02/balanced/", "mean")
+data_set = get_lowed_image(data_set, 10)
+get_image_gaussian_plumes(data_set, [{"id": 1, "point": [49, 49]}])
 
 """data_set = get_json_content_w_name(directory_path+"images/2021/05/03/balanced/", "mean")
 data_set = get_lowed_image(data_set, 10)
