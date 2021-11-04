@@ -26,10 +26,6 @@ from numpy import array
 
 
 
-
-
-
-
 min_peak_height = 33.3
 og_min_peaks_distance = 0.3
 min_peaks_distance = 0.3
@@ -591,6 +587,62 @@ def get_lowed_image(data_set, data_range):
             if new_data_set[y][x] < 0: new_data_set[y][x] = 0
     return new_data_set
 
+def get_lowed_image_proprtionally(data_set, data_range):
+    values_set = []
+    freq_set = []
+    lowed = 0
+    for row in data_set:
+        for value in row:
+            values_set.append(value)
+    min_val = min(values_set)
+    max_val = max(values_set)
+    tot_freq = (max_val - min_val) / data_range
+    for i in range(int(tot_freq) + 1):
+        freq_set.append(0)
+    for value in values_set:
+        freq_set[int((value - min_val) / data_range)] += 1
+    max_freq = max(freq_set)
+    for i in range(len(freq_set)):
+        if freq_set[i] == max_freq:
+            lowed = min_val + (i) * data_range
+            break
+    new_data_set = []
+    print(lowed)
+    for y in range(len(data_set)):
+        new_data_set.append([])
+        for x in range(len(data_set[y])):
+            # new_data_set[y].append(0)
+            # if data_set[y][x] > lowed: new_data_set[y][x] = data_set[y][x]
+            new_data_set[y].append(data_set[y][x] * 50 / lowed - 50)
+            if new_data_set[y][x] < 0: new_data_set[y][x] = 0
+    return new_data_set
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1077,7 +1129,8 @@ def get_all_parameters_plumes(directory_path, additional_peaks_path, additional_
 
     peaks = get_json_content_w_name(directory_path + additional_peaks_path + "peaks/", "peaks")
     gaussian_shape_list = {}
-
+    f_name = ""
+    if date_start.year < 2021: f_name = "old_"
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
@@ -1098,7 +1151,7 @@ def get_all_parameters_plumes(directory_path, additional_peaks_path, additional_
                     #gaussian_shape_list[str(peak["id"])].append(gaussian_shapes[str(peak["id"])])
 
     for peak in peaks:
-        save_json(directory_path + additional_peaks_path + "gaussian_shapes/" + "peak_" + str(peak["id"]) +"/", gaussian_shape_list[str(peak["id"])], "parameters")
+        save_json(directory_path + additional_peaks_path + "gaussian_shapes/" + "peak_" + str(peak["id"]) +"/", gaussian_shape_list[str(peak["id"])], f_name + "parameters")
 
 
 
@@ -1176,8 +1229,8 @@ minQa = values["minQas"][1]
 image_type = values["image_types"][1]
 
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2020, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 data_range = 30
 
 directory_path = "../data/" + product_type + "/" + location_name + "/"
@@ -1192,16 +1245,20 @@ additional_images_path = "images/"
 
 #get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
 
-#get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
+get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
 
 #mean = create_all_mean_json(product_type, location_name, 3)
 #print_image_given_matrix(mean)
 
 
 
-"""data_set = get_json_content_w_name(directory_path+"images/2021/04/02/balanced/", "mean")
-data_set = get_lowed_image(data_set, 10)
-get_image_gaussian_plumes(data_set, [{"id": 1, "point": [49, 49]}])"""
+#data_set = get_json_content_w_name(directory_path+"images/2021/05/07/balanced/", "data")["4"]
+#print_image_given_matrix(data_set)
+#data_set = get_lowed_image(data_set, 10)
+
+#data_set = get_matrix_low_pass_filtered(data_set, 0.2)
+#get_image_gaussian_plumes(data_set, [{"id": 3, "point": [65, 80]}], "image")
+#get_image_gaussian_plumes(data_set, [{"id": 3, "point": [49, 49]}], "image")
 
 """data_set = get_json_content_w_name(directory_path+"images/2021/05/03/balanced/", "mean")
 data_set = get_lowed_image(data_set, 10)
