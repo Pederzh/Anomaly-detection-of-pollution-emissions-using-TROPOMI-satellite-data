@@ -1229,8 +1229,8 @@ minQa = values["minQas"][1]
 image_type = values["image_types"][1]
 
 date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=11, day=1, hour=0, minute=0, second=0, microsecond=0)
 data_range = 30
 
 directory_path = "../data/" + product_type + "/" + location_name + "/"

@@ -138,7 +138,6 @@ def get_hourly_images(product_type, location_name, minQa_info, date_start):
     if location_name == "Sabetta Port":
         sabetta_port_coordinates = [71.264765, 72.060155]
         bbox_coordinates = get_bbox_coordinates_from_center(sabetta_port_coordinates, distance_radius)
-        print(bbox_coordinates)
         range_h = 10.5
     # setting image dimension
     precision = 2000 # meters per pixel
@@ -194,8 +193,8 @@ values = {
     "minQas": ["high", "all"]
 }
 date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=11, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 product_type = values["product_types"][0]
 location_name = values["locations_name"][1]

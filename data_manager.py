@@ -951,8 +951,8 @@ values = {
     "image_types": ["unprocessed", "balanced", "lowed", "interpolated", ]
 }
 date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=11, day=1, hour=0, minute=0, second=0, microsecond=0)
 
 product_type = values["product_types"][0]
 location_name = values["locations_name"][1]
@@ -962,7 +962,7 @@ image_type = values["image_types"][2]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #           TO CREATE ALL JSON FILES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_json_from_images(product_type, location_name, date_start, date_end, "unprocessed")
+create_all_json_from_images(product_type, location_name, date_start, date_end, "unprocessed")
 
 
 
@@ -973,12 +973,12 @@ image_type = values["image_types"][2]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #       TO CREATE FILLED JSON FILES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_filled_json(product_type, location_name, date_start, date_end)
+create_all_filled_json(product_type, location_name, date_start, date_end)
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #   TO CREATE ALL IMAGES FROM FILLED JSON
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_json(product_type, location_name, date_start, date_end, "filled")
+create_images_from_all_json(product_type, location_name, date_start, date_end, "filled")
 
 
 
@@ -987,12 +987,12 @@ image_type = values["image_types"][2]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #       TO CREATE INTERPOLATED JSON FILES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_interpolated_json(product_type, location_name, date_start, date_end)
+create_all_interpolated_json(product_type, location_name, date_start, date_end)
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #   TO CREATE ALL IMAGES FROM INTERPOLATED JSON
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_json(product_type, location_name, date_start, date_end, "interpolated")
+create_images_from_all_json(product_type, location_name, date_start, date_end, "interpolated")
 
 
 
@@ -1001,12 +1001,12 @@ image_type = values["image_types"][2]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #       TO CREATE BALANCED JSON FILES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_balanced_json(product_type, location_name, date_start, date_end)
+create_all_balanced_json(product_type, location_name, date_start, date_end)
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #   TO CREATE ALL IMAGES FROM BALANCED JSON
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_json(product_type, location_name, date_start, date_end, "balanced")
+create_images_from_all_json(product_type, location_name, date_start, date_end, "balanced")
 
 
 
@@ -1015,12 +1015,12 @@ image_type = values["image_types"][2]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #       TO CREATE LOWED JSON FILES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_lowed_json(product_type, location_name, date_start, date_end)
+create_all_lowed_json(product_type, location_name, date_start, date_end)
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #   TO CREATE ALL IMAGES FROM LOWED JSON
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_json(product_type, location_name, date_start, date_end, "lowed")
+create_images_from_all_json(product_type, location_name, date_start, date_end, "lowed")
 
 
 
@@ -1033,19 +1033,19 @@ image_type = values["image_types"][2]
 #               JSON MEAN OF IMAGES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#create_all_mean_json(product_type, location_name, date_start, date_end, "filled")
-#create_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
-#create_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
-#create_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
+create_all_mean_json(product_type, location_name, date_start, date_end, "filled")
+create_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
+create_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
+create_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #   TO CREATE ALL IMAGES FROM ALL MEAN JSON
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "filled")
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
+create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "filled")
+create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
+create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
+create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
 
 
 
