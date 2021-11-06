@@ -220,53 +220,19 @@ def SARIMA_test(data_set_mean, target, d_order, s_order, day_range_prediction):
     }
 
 
-
-
-
-
-
-
-
-
-
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
-#                                       MAIN
+#                                    OTHER FUNCTION
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-data_set = get_json_content_w_name("../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_2/", "parameters")
-
-# DATA PREPARATION
-
-new_data = []
-date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
-for day_counter in range(int((date_end - date_start).days)):
-    date = date_start + datetime.timedelta(days=day_counter)
-    date_str = date.strftime("%Y-%m-%d")
-    if date_str in data_set:
-        new_data.append({
-            "parameters": data_set[date_str]
-        })
-    else:
-        new_data.append({
-            "parameters": [np.nan, np.nan, np.nan]
-        })
-
-# PREDICTION
-
-day_range_prediction = 10
-pred = SARIMA_test(new_data, 2, [0, 1, 3], [1, 1, 1, 4], day_range_prediction)
-
-# ALARMING
 def get_error(prediction, actual):
     if actual != np.nan:
         return abs(prediction - actual)
     else:
         return 0
+
 def get_RMSE(pred, act, max_error_position):
     mse = 0
     tot = 0
@@ -277,32 +243,77 @@ def get_RMSE(pred, act, max_error_position):
     mse = mse / tot
     rmse = math.sqrt(mse)
     return rmse
-max_difference = 20000
-max_error = 0
-max_error_position = 0
-for i in range(len(pred["prediction"])):
-    error = get_error(pred["prediction"][i], pred["actual_value"][i])
-    if error > max_error:
-        max_error = error
-        max_error_position = i
-rmse = get_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
 
-flag = "GREEN"
-is_ok = True
 
-if rmse > max_difference:
-    is_ok = False
-    if rmse > max_difference * 2:
-        flag = "RED"
+
+
+
+
+
+
+
+
+
+
+def main_alerter(product_type, location_name, date_start, date_end, data_range, peak_id, parameter, day_range_prediction):
+
+    directory_path = "../Data/" + product_type + "/" + location_name +  " /range_data/ "
+    directory_path = directory_path + str(data_range) + "/gaussian_shapes/peak_" + str(peak_id) + "/"
+    data_set = get_json_content_w_name(directory_path , "parameters")
+
+    # DATA PREPARATION
+    new_data = []
+    for day_counter in range(int((date_end - date_start).days)):
+        date = date_start + datetime.timedelta(days=day_counter)
+        date_str = date.strftime("%Y-%m-%d")
+        if date_str in data_set: new_data.append({"parameters": data_set[date_str]})
+        else: new_data.append({"parameters": [np.nan, np.nan, np.nan]})
+
+    # PREDICTION
+    pred = SARIMA_test(new_data, parameter, [0, 1, 3], [1, 1, 1, 4], day_range_prediction)
+
+    # ALARMING
+    max_difference = 20000
+    max_error = 0
+    max_error_position = 0
+    for i in range(len(pred["prediction"])):
+        error = get_error(pred["prediction"][i], pred["actual_value"][i])
+        if error > max_error:
+            max_error = error
+            max_error_position = i
+    rmse = get_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
+
+    flag = "GREEN"
+    is_ok = True
+
+    if rmse > max_difference:
+        is_ok = False
+        if rmse > max_difference * 2:
+            flag = "RED"
+        else:
+            flag = "ORANGE"
     else:
-        flag = "ORANGE"
-else:
-    if rmse > max_difference / 2:
-        flag = "YELLOW"
+        if rmse > max_difference / 2:
+            flag = "YELLOW"
 
-print("RMSE: " + str(rmse))
-print(is_ok)
-print(flag)
+    print("RMSE: " + str(rmse))
+    print(is_ok)
+    print(flag)
 
 
 
+def main_alerter_sabetta():
+
+    date = datetime.datetime.now()
+    date_start = date.replace(year=2021, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
+    date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    main_alerter("NO2", "Sabetta Port", date_start, date_end, 30, 2, 2, 10)
+
+
+def main_alerter_default(location_name, date_start, date_end, peak_id):
+
+    main_alerter("NO2", location_name, date_start, date_end, 30, peak_id, 2, 10)
+
+
+main_alerter_sabetta()
