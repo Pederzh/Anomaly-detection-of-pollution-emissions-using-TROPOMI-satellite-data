@@ -1052,7 +1052,7 @@ def get_image_gaussian_plumes(data_set, peaks, format):
 
 
 
-def get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end):
+def get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, product_type, location_name, date_start, date_end):
 
     peaks = get_json_content_w_name(directory_path + additional_peaks_path + "peaks/", "peaks")
     gaussian_shape_list = {}
@@ -1125,7 +1125,7 @@ def create_peaks_id(directory_path, file_name):
 
 
 
-def get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end):
+def get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, product_type, location_name, date_start, date_end):
 
     peaks = get_json_content_w_name(directory_path + additional_peaks_path + "peaks/", "peaks")
     gaussian_shape_list = {}
@@ -1211,41 +1211,57 @@ def create_all_mean_json(product_type, location_name, peak):
 
 
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                       MAIN
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-values = {
-    "product_types": ["NO2", "CO", "CH4", "SO2"],
-    "locations_name": ["Bering Strait", "Sabetta Port"],
-    "minQas": ["high", "all"],
-    "image_types": ["unprocessed", "balanced"]
-}
 
-sys.setrecursionlimit(10000)
-product_type = values["product_types"][0]
-location_name = values["locations_name"][1]
-minQa = values["minQas"][1]
-image_type = values["image_types"][1]
 
-date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=11, day=1, hour=0, minute=0, second=0, microsecond=0)
-data_range = 30
+def main_reconstructor(product_type, location_name, date_start, date_end, data_range):
+    directory_path = "../data/" + product_type + "/" + location_name + "/"
+    additional_peaks_path = "range_data/" + str(data_range) + "/"
+    additional_images_path = "images/"
+    create_peaks_id(directory_path + additional_peaks_path + "peaks/", "data")
+    get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, product_type,
+                              location_name, date_start, date_end)
 
-directory_path = "../data/" + product_type + "/" + location_name + "/"
-additional_peaks_path = "range_data/" + str(data_range) + "/"
-additional_images_path = "images/"
 
-#save_range_json(product_type, location_name, date_start, date_end, data_range)
 
-#create_images_from_json(directory_path, "data")
+def main_reconstructor_sabetta():
+    values = {
+        "product_types": ["NO2", "CO", "CH4", "SO2"],
+        "locations_name": ["Bering Strait", "Sabetta Port"],
+    }
 
-#create_peaks_id(directory_path + additional_peaks_path + "peaks/", "data")
+    sys.setrecursionlimit(10000)
+    product_type = values["product_types"][0]
+    location_name = values["locations_name"][1]
 
-#get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
+    date = datetime.datetime.now()
+    date_start = date.replace(year=2021, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
+    date_end = date.replace(year=2021, month=11, day=5, hour=0, minute=0, second=0, microsecond=0)
+    data_range = 30
 
-get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
+    main_reconstructor(product_type, location_name, date_start, date_end, data_range)
+
+def main_reconstructor_default(location_name, date_start, date_end):
+    main_reconstructor("NO2", location_name, date_start, date_end, 30)
+
+
+
+main_reconstructor_sabetta()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #mean = create_all_mean_json(product_type, location_name, 3)
 #print_image_given_matrix(mean)
