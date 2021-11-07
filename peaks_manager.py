@@ -899,6 +899,17 @@ def get_matrix_max_value(data_set):
 
 def get_image_peaks(data_set):
     peaks = two_dimensional_peak_finding(data_set)
+    """tmp = []
+    if len(peaks) > 0:
+        for y in range(len(data_set)):
+            tmp.append([])
+            for x in range(len(data_set[y])):
+                if [y, x] in peaks:
+                    tmp[y].append(1000)
+                else:
+                    tmp[y].append(0)
+        tmp = gaussian_filter(tmp, 3)
+        peaks = two_dimensional_peak_finding(tmp)"""
     plumes = get_matrix_shapes_from_peak(data_set, get_matrix_max_value(data_set))
     plumes_peaks = {}
     for p in peaks:
@@ -1032,4 +1043,4 @@ def main_peak_finder_default(product_type, location_name, date_start, date_end):
     main_peak_finder("NO2", location_name, date_start, date_end, 30)
 
 
-main_peak_finder_sabetta()
+#main_peak_finder_sabetta()

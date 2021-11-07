@@ -15,6 +15,8 @@ from osgeo import osr
 import numpy as np
 import pathlib
 import os, sys
+from pathlib import Path
+from scipy.ndimage import median_filter, median, maximum_filter, gaussian_filter
 
 # Your client credentials
 client_id = '982de4f4-dade-4f98-9b49-4374cd896bb6'
@@ -49,11 +51,9 @@ def get_standard_rgb_values(value):
     [maxVal, [0.5, 0, 0]]
     """
     rgb = [0, 0, 0, 255]
-    if value == -1 or value == None: return [0, 0, 0, 0]
+    if (value == -1): return [0, 0, 0, 0]
     precision = 1016  # given by the rgb composition
     prop = value / precision
-    rgb[3] = round(prop * 1016) + 50
-    if rgb[3] > 255: rgb[3] = 255
     # [0, 0, 1]
     if prop <= 0.125:
         min = 0
@@ -169,6 +169,12 @@ def get_json_content_w_name(directory_path, name):
         data = json.load(json_file)
     return data
 
+def save_image(directory_path, file_name, rgbt_matrix):
+    Path(directory_path).mkdir(parents=True, exist_ok=True)
+    array = np.array(rgbt_matrix, dtype=np.uint8)
+    image = Image.fromarray(array)
+    image.save(directory_path + file_name + ".png", format="png")
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #              PARAMETERS DEFINITION
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -203,16 +209,40 @@ file_name = info_name + date_start.strftime("%Y-%m-%d") + "_" + date_end.strftim
 directory_path = "./data/" + location_name + "/" + product_type + "/Statistics/"
 print("from file: " + directory_path + file_name)
 
-directory_path = "../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_2/"
-data_set = get_json_content_w_name(directory_path, "data")
-directory_path = "../Data/NO2/Sabetta Port/images/2021/05/03/lowed/"
-file_name = "mean"
-directory_path = "../Data/NO2/Sabetta Port/range_data/30/"
+
+directory_path = "../Data/NO2/Sabetta Port/images/2021/03/10/lowed/"
+directory_path = "../Data/NO2/Sabetta Port/range_data/30/peaks/"
+file_name = "og_data_tmp"
+data_set = get_json_content_w_name(directory_path, file_name)#["2021-03-01"]
+
+rgba_data_set = []
+data_set[4][73] = 0
+for y in range(len(data_set)):
+    for x in range(len(data_set[y])):
+        data_set[y][x] = data_set[y][x] * 10
+for y in range(len(data_set)):
+    rgba_data_set.append([])
+    for x in data_set[y]:
+        rgba_data_set[y].append(get_standard_rgb_values(x))
+directory_write = "../Thesis images/9/"
+file_write = "peaks from 2021-02-01 to 2021-10-01"
+save_image(directory_write, file_write, rgba_data_set)
+
+"""directory_path = "../Data/NO2/Sabetta Port/range_data/30/"
 file_name = "data"
 data_set = get_json_content_w_name(directory_path, file_name)["2021-04-01"]
 
-directory_write = "../Thesis images/"
-file_write = "2021-04-01"
+directory_write = "../Thesis images/0/clean plume/"
+file_write = "2021-04-29_3"
+"""
+
+
+
+
+
+
+
+
 
 
 data = data_set
