@@ -830,13 +830,13 @@ def two_dimensional_peak_finding(data_set):
 
 
 
-def calculate_means(date_start, date_end):
+def calculate_means(date_start, date_end, product_type, location_name):
 
     mean_set = []
     tot = 0
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + "lowed" + "/"
         my_path = Path(directory_path)
@@ -863,11 +863,11 @@ def save_range_json(product_type, location_name, date_global_start, date_global_
         date_start = date_global_start + datetime.timedelta(days=day_counter)
         date_end = date_start + datetime.timedelta(days=data_range)
         print("at day " + date_start.strftime("%Y-%m-%d"))
-        month_set = calculate_means(date_start, date_end)
+        month_set = calculate_means(date_start, date_end, product_type, location_name)
         if month_set != None:
             months_set[date_start.strftime("%Y-%m-%d")] = month_set
 
-    directory_path = "../data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
+    directory_path = "./data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
     save_json(directory_path, months_set, "data")
 
 def create_images_from_json(directory_path, file_name):
@@ -1060,7 +1060,7 @@ def get_all_images_plumes(directory_path, additional_peaks_path, additional_imag
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_img_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_img_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_img_path = directory_img_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_img_path = directory_img_path + date.strftime("%d") + "/" + "balanced" + "/"
         my_path = Path(directory_img_path)
@@ -1134,7 +1134,7 @@ def get_all_parameters_plumes(directory_path, additional_peaks_path, additional_
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_img_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_img_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_img_path = directory_img_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_img_path = directory_img_path + date.strftime("%d") + "/" + "balanced" + "/"
         my_path = Path(directory_img_path)
@@ -1201,7 +1201,7 @@ def create_dir_mean_from_json(directory_path):
         #save_json(directory_path, mean_matrix, "mean")
 
 def create_all_mean_json(product_type, location_name, peak):
-    directory_path = "../data/" + product_type + "/" + location_name + "/range_data/30/gaussian_shapes/"
+    directory_path = "./data/" + product_type + "/" + location_name + "/range_data/30/gaussian_shapes/"
     directory_path = directory_path + "peak_" + str(peak) + "/"
     my_path = Path(directory_path)
     if my_path.is_dir():
@@ -1215,7 +1215,7 @@ def create_all_mean_json(product_type, location_name, peak):
 
 
 def main_reconstructor(product_type, location_name, date_start, date_end, data_range):
-    directory_path = "../data/" + product_type + "/" + location_name + "/"
+    directory_path = "./data/" + product_type + "/" + location_name + "/"
     additional_peaks_path = "range_data/" + str(data_range) + "/"
     additional_images_path = "images/"
     create_peaks_id(directory_path + additional_peaks_path + "peaks/", "data")

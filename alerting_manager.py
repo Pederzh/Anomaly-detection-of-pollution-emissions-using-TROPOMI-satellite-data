@@ -257,7 +257,7 @@ def get_RMSE(pred, act, max_error_position):
 
 def main_alerter(product_type, location_name, date_start, date_end, data_range, peak_id, parameter, day_range_prediction):
 
-    directory_path = "../Data/" + product_type + "/" + location_name +  " /range_data/ "
+    directory_path = "./Data/" + product_type + "/" + location_name +  " /range_data/ "
     directory_path = directory_path + str(data_range) + "/gaussian_shapes/peak_" + str(peak_id) + "/"
     data_set = get_json_content_w_name(directory_path , "parameters")
 

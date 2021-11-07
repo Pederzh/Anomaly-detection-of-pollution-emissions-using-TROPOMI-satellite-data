@@ -207,7 +207,7 @@ def create_all_json_from_images(product_type, location_name, date_start, date_en
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + image_type + "/"
         my_path = Path(directory_path)
@@ -283,7 +283,7 @@ def create_all_filled_json(product_type, location_name, date_start, date_end):
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
@@ -496,7 +496,7 @@ def create_all_interpolated_json(product_type, location_name, date_start, date_e
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
@@ -581,7 +581,7 @@ def create_all_lowed_json(product_type, location_name, date_start, date_end):
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
@@ -729,7 +729,7 @@ def create_all_balanced_json(product_type, location_name, date_start, date_end):
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
@@ -843,7 +843,7 @@ def create_images_from_all_json(product_type, location_name, date_start, date_en
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + image_type + "/"
         my_path = Path(directory_path)
@@ -892,7 +892,7 @@ def create_all_mean_json(product_type, location_name, date_start, date_end, imag
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + image_type + "/"
         my_path = Path(directory_path)
@@ -914,7 +914,7 @@ def create_images_from_all_mean_json(product_type, location_name, date_start, da
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + image_type + "/"
         my_path = Path(directory_path)

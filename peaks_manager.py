@@ -823,7 +823,7 @@ def calculate_means(product_type, location_name, date_start, date_end):
     tot = 0
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + "lowed" + "/"
         my_path = Path(directory_path)
@@ -854,7 +854,7 @@ def save_range_json(product_type, location_name, date_global_start, date_global_
         if month_set != None:
             months_set[date_start.strftime("%Y-%m-%d")] = month_set
 
-    directory_path = "../data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
+    directory_path = "./data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
     save_json(directory_path, months_set, "data")
 
 
@@ -1011,7 +1011,7 @@ def save_range_peaks(directory_path, file_name):
 
 
 def main_peak_finder(product_type, location_name, date_start, date_end, data_range):
-    directory_path = "../data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
+    directory_path = "./data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
     save_range_json(product_type, location_name, date_start, date_end, data_range)
     save_range_peaks(directory_path, "data")
 

@@ -238,7 +238,7 @@ def save_json(image_list, product_type, location_name):
     for i in range(len(image_list)):
         image = image_list[i]
         json_file[str(image["time"])] = create_image_matrix(image["image"])
-    directory_path = "../data/" + product_type + "/" + location_name + "/images/" \
+    directory_path = "./data/" + product_type + "/" + location_name + "/images/" \
                      + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") \
                      + "/" + image["date"].strftime("%d") + "/" + "unprocessed/"
     Path(directory_path).mkdir(parents=True, exist_ok=True)
@@ -262,7 +262,7 @@ def save_json(image_list, product_type, location_name):
 
 
 def save_image(image, product_type, location_name):
-    directory_path = "../data/" + product_type + "/" + location_name + "/images/" \
+    directory_path = "./data/" + product_type + "/" + location_name + "/images/" \
                          + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") \
                            + "/" + image["date"].strftime("%d") + "/" + "unprocessed/"
     file_name = str(image["time"])
