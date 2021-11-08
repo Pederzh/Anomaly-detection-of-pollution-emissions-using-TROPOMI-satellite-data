@@ -184,6 +184,25 @@ def get_parameters_mean(data_set, day_range, type):
         parameters_list.append(obj)
     return parameters_list
 
+def get_new_coordinates(lat, lon, distance_lat, distance_lon):
+    lat_new = lat + (180 / math.pi) * (distance_lat / 6378137)
+    lon_new = lon + (180 / math.pi) * (distance_lon / 6378137) / math.cos(math.pi/180*lat)
+    return [lat_new, lon_new]
+
+def get_new_longitude(lat, lon, distance_lon):
+    return get_new_coordinates(lat, lon, 0, distance_lon)[1]
+
+def get_new_latitude(lat, lon, distance_lat):
+    return get_new_coordinates(lat, lon, distance_lat, 0)[0]
+
+def get_bbox_coordinates_from_center(coordinates, distance):
+    new_coordinates = []
+    lat = coordinates[0]
+    lon = coordinates[1]
+    new_coordinates.append(get_new_latitude(lat, lon, distance[0]))
+    new_coordinates.append(get_new_longitude(lat, lon, distance[1]))
+    return new_coordinates
+
 
 
 
@@ -269,6 +288,20 @@ def get_RMSE(pred, act, max_error_position):
     rmse = math.sqrt(mse)
     return rmse
 
+def get_mean_from_RMSE(pred, act, max_error_position):
+    new_pred = 0
+    new_act = 0
+    tot = 0
+
+    for i in range(len(pred)):
+        if act[i] != np.nan and i != max_error_position:
+            new_pred += pred[i]
+            new_act += act[i]
+            tot += 1
+    new_pred = new_pred / tot
+    new_act = new_act / tot
+    return [new_pred, new_act]
+
 
 
 
@@ -282,7 +315,20 @@ def get_RMSE(pred, act, max_error_position):
 
 def main_alerter(product_type, location_name, date_start, date_end, data_range, peak_id, parameter, day_range_prediction):
 
-    directory_path = "./Data/" + product_type + "/" + location_name +  " /range_data/ "
+    directory_path = "./Data/" + product_type + "/" + location_name + "/range_data/"
+    directory_path = directory_path + str(data_range) + "/peaks/"
+    peaks = get_json_content_w_name(directory_path, "peaks")
+    if peaks == None: return None
+    if len(peaks) == 0: return None
+    image_ccs = None
+    for peak in peaks:
+        if peak["id"] == peak_id:
+            image_ccs = peak["point"]
+    if image_ccs == None: return None
+
+    map_ccs = get_json_content_w_name("./Data/" + product_type + "/" + location_name + "/", "coordinates")
+
+    directory_path = "./Data/" + product_type + "/" + location_name +  "/range_data/"
     directory_path = directory_path + str(data_range) + "/gaussian_shapes/peak_" + str(peak_id) + "/"
     data_set = get_json_content_w_name(directory_path , "parameters")
 
@@ -291,8 +337,14 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         date_str = date.strftime("%Y-%m-%d")
-        if date_str in data_set: new_data.append({"parameters": data_set[date_str]})
-        else: new_data.append({"parameters": [np.nan, np.nan, np.nan]})
+        if date_str in data_set: new_data.append({
+            "parameters": data_set[date_str],
+            "date": date_str
+        })
+        else: new_data.append({
+            "parameters": [np.nan, np.nan, np.nan],
+            "date": date_str
+        })
 
     # PREDICTION
     pred = SARIMA_test(new_data, parameter, [0, 1, 3], [1, 1, 1, 4], day_range_prediction)
@@ -307,12 +359,11 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
             max_error = error
             max_error_position = i
     rmse = get_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
+    new_pred = get_mean_from_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
+
 
     flag = "GREEN"
-    is_ok = True
-
     if rmse > max_difference:
-        is_ok = False
         if rmse > max_difference * 2:
             flag = "RED"
         else:
@@ -321,9 +372,33 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
         if rmse > max_difference / 2:
             flag = "YELLOW"
 
-    print("RMSE: " + str(rmse))
-    print(is_ok)
-    print(flag)
+    pred_parameters = get_gaussian_parameters(new_pred[0])
+    actl_parameters = get_gaussian_parameters(new_pred[1])
+    distance = [
+        image_ccs[0] - 49,
+        image_ccs[1] - 49
+    ]
+    final_ccs = get_bbox_coordinates_from_center(map_ccs["coordinates"], distance)
+
+    responce = {
+        "status": flag,
+        "forecasted_value": {
+            "peak": pred_parameters[0],
+            "attenuation": pred_parameters[1],
+            "volume": pred_parameters[2]
+        },
+        "actual_value": {
+            "peak": actl_parameters[0],
+            "attenuation": actl_parameters[1],
+            "volume": actl_parameters[2]
+        },
+        "other_information": {
+            "coordinates": final_ccs,
+            "days_range": day_range_prediction,
+            "date": date_end,
+        }
+    }
+    return responce
 
 
 
@@ -332,13 +407,12 @@ def main_alerter_sabetta():
     date = datetime.datetime.now()
     date_start = date.replace(year=2021, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
     date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
-
-    main_alerter("NO2", "Sabetta Port", date_start, date_end, 30, 2, 2, 10)
+    return main_alerter("NO2", "Sabetta Port", date_start, date_end, 30, 2, 2, 10)
 
 
 def main_alerter_default(location_name, date_start, date_end, peak_id):
 
-    main_alerter("NO2", location_name, date_start, date_end, 30, peak_id, 2, 10)
+    return main_alerter("NO2", location_name, date_start, date_end, 30, peak_id, 2, 10)
 
 
-main_alerter_sabetta()
+print(main_alerter_sabetta())

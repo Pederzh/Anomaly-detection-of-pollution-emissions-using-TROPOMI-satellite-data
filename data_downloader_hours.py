@@ -146,6 +146,10 @@ def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
 
 
 
+def save_json_w_name(directory_path, json_file, json_file_name):
+    Path(directory_path).mkdir(parents=True, exist_ok=True)
+    with open(directory_path + json_file_name + ".json", 'w') as outfile:
+        json.dump(json_file, outfile)
 
 def get_new_coordinates(lat, lon, distance_lat, distance_lon):
     lat_new = lat + (180 / math.pi) * (distance_lat / 6378137)
@@ -322,6 +326,9 @@ def get_hourly_images(date_start, start_h, range_h, coordinates, location_name, 
 
 
 def main_downloader(date_start, date_end, start_h, range_h, coordinates, location_name, product_type):
+
+    directory_path = "./Data/" + product_type + "/" + location_name + "/"
+    save_json_w_name(directory_path, {"coordinates": coordinates}, "coordinates")
 
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)

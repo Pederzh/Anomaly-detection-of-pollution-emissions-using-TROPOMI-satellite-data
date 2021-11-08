@@ -29,6 +29,8 @@ import matplotlib.pyplot as plt
 import scipy.signal
 from scipy.interpolate import griddata
 from numpy import array
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_selection import RFE
 
 
 from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -250,6 +252,91 @@ def get_parameters_mean(data_set, day_range, type):
 
 
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+#                                  RANDOM FOREST
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+def random_forest_test(data_set_mean, target, day_range_prediction):
+    df_array_train = []
+    df_array_test = []
+    for i in range(len(data_set_mean)):
+
+        datestr = data_set_mean[i]["date"]
+        datestr = datestr.split("-")
+        date = datetime.datetime.now()
+        date_final = date.replace(year=int(datestr[0]), month=int(datestr[1]), day=int(datestr[2]))
+        day_initial = date.replace(year=int(datestr[0]), month=1, day=1)
+        data = {
+            "target": data_set_mean[i]["parameters"][target],
+            "day_of_year": (date_final - day_initial).days
+        }
+        for j in range(10):
+            data["year_" + str(2020 + j)] = 0
+        for j in range(12):
+            data["month_" + str(j+1)] = 0
+        for j in range(31):
+            data["day_" + str(j+1)] = 0
+        for j in range(7):
+            data["day_of_week" + str(j)] = 0
+        data["year_" + str(date_final.year)] = 1
+        data["month_" + str(date_final.month)] = 1
+        data["day_" + str(date_final.day)] = 1
+        #print(data_set_mean[i]["date"].weekday())
+        data["day_of_week" + str(date_final.weekday())] = 1
+        if i < (len(data_set_mean) - day_range_prediction):
+            df_array_train.append(data)
+        else:
+            df_array_test.append(data)
+    df_train = pd.DataFrame(df_array_train)
+    print(df_train)
+    df_train.dropna(subset = ["target"], inplace=True)
+
+    df_test = pd.DataFrame(df_array_test)
+    print(df_test)
+    df_test.dropna(subset=["target"], inplace=True)
+
+    # splitting in target and parameters
+    y_train = df_train["target"]
+    x_train = df_train.drop("target", axis=1)
+
+    y_test = df_test["target"]
+    x_test = df_test.drop("target", axis=1)
+
+    # splitting the data
+    #x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.05, random_state = 2)
+
+    # fitting the training data
+    rfe = RFE(RandomForestRegressor(n_estimators=100, random_state=1))
+    rfe_fit = rfe.fit(x_train, y_train)
+    y_prediction = rfe.predict(x_test)
+    MSE = 0
+    for i in range(len(list(y_prediction))):
+        MSE += pow(list(y_prediction)[i] - list(y_test)[i], 2)
+    return MSE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -261,36 +348,58 @@ def get_parameters_mean(data_set, day_range, type):
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-def linear_regression_test(data_set_mean, target):
-    df_array = []
+def linear_regression_test(data_set_mean, target, day_range_prediction):
+    df_array_train = []
+    df_array_test = []
     for i in range(len(data_set_mean)):
+
+        datestr = data_set_mean[i]["date"]
+        datestr = datestr.split("-")
+        date = datetime.datetime.now()
+        date_final = date.replace(year=int(datestr[0]), month=int(datestr[1]), day=int(datestr[2]))
+        day_initial = date.replace(year=int(datestr[0]), month=1, day=1)
         data = {
             "target": data_set_mean[i]["parameters"][target],
-            "year": data_set_mean[i]["date"].year,
-            "day": data_set_mean[i]["date"].day,
+            "day_of_year": (date_final - day_initial).days
         }
-        for i in range(12):
-            data["month_" + str(i+1)] = 0
-        for i in range(7):
-            data["day_of_week" + str(i+1)] = 0
-        data["month_" + str(data_set_mean[i]["date"].month)] = 1
-        data["day_of_week" + str(data_set_mean[i]["date"].weekday())] = 1
-        df_array.append(data)
-    df = pd.DataFrame(df_array)
+        for j in range(10):
+            data["year_" + str(2020 + j)] = 0
+        for j in range(12):
+            data["month_" + str(j + 1)] = 0
+        for j in range(31):
+            data["day_" + str(j + 1)] = 0
+        for j in range(7):
+            data["day_of_week" + str(j)] = 0
+        data["year_" + str(date_final.year)] = 1
+        data["month_" + str(date_final.month)] = 1
+        data["day_" + str(date_final.day)] = 1
+        # print(data_set_mean[i]["date"].weekday())
+        data["day_of_week" + str(date_final.weekday())] = 1
+        if i < (len(data_set_mean) - day_range_prediction):
+            df_array_train.append(data)
+        else:
+            df_array_test.append(data)
+    df_train = pd.DataFrame(df_array_train)
+    df_train.dropna(subset=["target"], inplace=True)
+
+    df_test = pd.DataFrame(df_array_test)
+    df_test.dropna(subset=["target"], inplace=True)
 
     # splitting in target and parameters
-    y = df["target"]
-    x = df.drop("target", axis=1)
+    y_train = df_train["target"]
+    x_train = df_train.drop("target", axis=1)
 
-    # splitting the data
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.05, random_state = 210)
+    y_test = df_test["target"]
+    x_test = df_test.drop("target", axis=1)
 
     # fitting the training data
     LR = LinearRegression()
     LR.fit(x_train, y_train)
     y_prediction = LR.predict(x_test)
-    print(y_prediction)
-    print(list(y_test))
+    MSE = 0
+    for i in range(len(list(y_prediction))):
+        MSE += pow(list(y_prediction)[i] - list(y_test)[i], 2)
+    return MSE
 
 
 
@@ -517,45 +626,60 @@ for i in range(len(data)):
 
 new_data = []
 date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=11, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_start = date.replace(year=2021, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=10, day=15, hour=0, minute=0, second=0, microsecond=0)
 for day_counter in range(int((date_end - date_start).days)):
     date = date_start + datetime.timedelta(days=day_counter)
     date_str = date.strftime("%Y-%m-%d")
     if date_str in data_set:
         new_data.append({
-            "parameters": data_set[date_str]
+            "parameters": data_set[date_str],
+            "date": date_str
         })
     """if date_str in old_data_set:
         old_data_set[date_str][0] = old_data_set[date_str][0] * prop_2020_to_2021
         old_data_set[date_str][2] = old_data_set[date_str][2] * prop_2020_to_2021
         new_data.append({
-            "parameters": old_data_set[date_str]
+            "parameters": old_data_set[date_str],
+            "date": date_str
         })"""
-    if date_str in test_set:
+    """if date_str in test_set:
         new_data.append({
             "parameters": test_set[date_str]
-        })
-    if date_str not in data_set and date_str not in test_set: #and date_str not in old_data_set:
+        })"""
+    if date_str not in data_set: # and date_str not in old_data_set: #and date_str not in test_set: #and date_str not in old_data_set:
         new_data.append({
-            "parameters": [np.nan, np.nan, np.nan]
+            "parameters": [np.nan, np.nan, np.nan],
+            "date": date_str
         })
 
 old_data_set_mean = get_parameters_mean(old_data_set, 10, "cleaned_mean")
 
 
-
 #linear_regression_test(data, 2)
 # [0, 1, 3], [1, 1, 1, 4] new
 # [3, 1, 3], [0, 1, 3, 4] old & new
-SARIMA_test(new_data, 2, [0, 1, 3], [1, 1, 1, 4])
+#SARIMA_test(new_data, 2, [0, 1, 3], [1, 1, 1, 4])
 #decomposition_test(new_data, 2, [1, 1, 0], [0, 0, 0, 0])
 #polynomial_regression_test(data_set_mean, 2, 7)
+MSE = random_forest_test(new_data, 2, 10)
+
+#MSE = linear_regression_test(new_data, 2, 5)
+print(MSE)
+
+# random forest
+# 22503333 + 1900224098 + 13585669 + 4437918 + 50123599
+random_f = pow((22503333 + 1900224098 + 13585669 + 4437918 + 50123599 + 47444089752)/35, 1/2)
+# random forest
+# 11598878 + 1660596509 + 453114053 + 1280070904 + 816598364
+linear_r = pow((11598878 + 1660596509 + 453114053 + 1280070904 + 816598364)/25, 1/2)
+print("random forest " + str(random_f))
+print("linear regr " + str(linear_r))
 
 # SARIMAX
 # LSTM
 
-predicted_on = [14416.00501533, 13381.46654801,  9929.42646877, 15620.59473791, 11022.62273669,
+"""predicted_on = [14416.00501533, 13381.46654801,  9929.42646877, 15620.59473791, 11022.62273669,
                 11333.98580037,  9760.64618931, 11937.11369269, 20552.57430616, 18451.35259097,
                 20192.26793016, 22211.42801011, 16975.65180541, 17842.65930563, 18285.33206189]
 actual_on = [9917, 3099, 4842, 6046, 45339, 15242, 1132,
@@ -565,7 +689,7 @@ predicted_n = [12078.76886436, 10474.69347418, 9435.82755632, 10712.58372369, 91
                10421.17844541, 9872.87050471, 4021.57830159, 2577.86673349, 5825.61405374,
                2182.07542376, 5094.74660349, 4380.64204229, 3945.76367494, 1548.24728261]
 actual_n = [9917, 3099, 4842, 6046, 45339, 15242, 1132,
-            18705, 15400, 944, 8468, 3076, 8756, 2848, 12031]
+            18705, 15400, 944, 8468, 3076, 8756, 2848, 12031]"""
 
 # NEW & OLD
 
@@ -581,7 +705,7 @@ a3 = [18705, 15400, 944, 8468, 3076, 8756, 2848, 12031]"""
 
 # NEW
 
-p1 = [7006.87161057, 10236.64531677, 10733.60130703, 10145.73010346, 10637.79668064]
+"""p1 = [7006.87161057, 10236.64531677, 10733.60130703, 10145.73010346, 10637.79668064]
 a1 = [92747, 70355, 23753, 39351, 6984]
 
 p2 = [12078.76886436, 10474.69347418, 9435.82755632, 10712.58372369, 9135.41076978, 10421.17844541, 9872.87050471]
@@ -640,7 +764,7 @@ print("using 2020 & 2021")
 get_RMSE(predicted_on, actual_on)
 print(" ")
 print("using 2021")
-get_RMSE(predicted_n, actual_n)
+get_RMSE(predicted_n, actual_n)"""
 
 
 """
