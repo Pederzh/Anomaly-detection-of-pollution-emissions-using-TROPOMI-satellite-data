@@ -49,8 +49,33 @@ def get_json_content_w_name(directory_path, name):
 
 
 
+def gauss_value(parameters, point):
+    A = parameters[0]
+    B = parameters[1]
+    y = point[0]
+    x = point[1]
+    return (A * pow(math.e, -B * (pow(x, 2) + pow(y, 2))))
 
+def get_gaussian_parameters(volume):
+    A = pow(volume, 2 / 3) / pow(math.pi, 2 / 3)
+    B = 1 / (pow(A, 1 / 2))
+    return [A, B, volume]
 
+def create_gaussian_image_w_parameters(image, parameters, point):
+    gaussian_image = []
+    for y in range(len(image)):
+        gaussian_image.append([])
+        for x in range(len(image[y])):
+            gauss_point = [
+                abs(point[0] - y),
+                abs(point[1] - x)
+            ]
+            gaussian_image[y].append(round(gauss_value(parameters, gauss_point)))
+    return gaussian_image
+
+def create_gaussian_image(image, volume, point):
+    parameters = get_gaussian_parameters(volume)
+    return create_gaussian_image_w_parameters(image, parameters, point)
 
 
 def get_parameters_mobile_mean(data_set, days_range):
