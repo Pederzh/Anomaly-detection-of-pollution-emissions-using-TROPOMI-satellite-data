@@ -810,7 +810,6 @@ def two_dimensional_peak_finding(data_set):
                 else:
                     data_tmp[y].append(0)
     return peaks
-    print_image_given_matrix(data_tmp)
 
 
 
@@ -818,13 +817,13 @@ def two_dimensional_peak_finding(data_set):
 
 
 
-def calculate_means(date_start, date_end):
+def calculate_means(product_type, location_name, date_start, date_end):
 
     mean_set = []
     tot = 0
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + "lowed" + "/"
         my_path = Path(directory_path)
@@ -851,11 +850,11 @@ def save_range_json(product_type, location_name, date_global_start, date_global_
         date_start = date_global_start + datetime.timedelta(days=day_counter)
         date_end = date_start + datetime.timedelta(days=data_range)
         print("at day " + date_start.strftime("%Y-%m-%d"))
-        month_set = calculate_means(date_start, date_end)
+        month_set = calculate_means(product_type, location_name, date_start, date_end)
         if month_set != None:
             months_set[date_start.strftime("%Y-%m-%d")] = month_set
 
-    directory_path = "../data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
+    directory_path = "./data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
     save_json(directory_path, months_set, "data")
 
 
@@ -900,6 +899,17 @@ def get_matrix_max_value(data_set):
 
 def get_image_peaks(data_set):
     peaks = two_dimensional_peak_finding(data_set)
+    """tmp = []
+    if len(peaks) > 0:
+        for y in range(len(data_set)):
+            tmp.append([])
+            for x in range(len(data_set[y])):
+                if [y, x] in peaks:
+                    tmp[y].append(1000)
+                else:
+                    tmp[y].append(0)
+        tmp = gaussian_filter(tmp, 3)
+        peaks = two_dimensional_peak_finding(tmp)"""
     plumes = get_matrix_shapes_from_peak(data_set, get_matrix_max_value(data_set))
     plumes_peaks = {}
     for p in peaks:
@@ -970,7 +980,7 @@ def get_unified_peaks(final_peaks):
     return unified_peaks_data
 
 
-def get_range_peaks(directory_path, file_name):
+def save_range_peaks(directory_path, file_name):
 
     final_peaks = []
     extended_peaks = []
@@ -1009,34 +1019,28 @@ def get_range_peaks(directory_path, file_name):
 
 
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                       MAIN
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-values = {
-    "product_types": ["NO2", "CO", "CH4", "SO2"],
-    "locations_name": ["Bering Strait", "Sabetta Port"],
-    "minQas": ["high", "all"],
-    "image_types": ["unprocessed", "balanced"]
-}
 
-product_type = values["product_types"][0]
-location_name = values["locations_name"][1]
-minQa = values["minQas"][1]
-image_type = values["image_types"][1]
+def main_peak_finder(product_type, location_name, date_start, date_end, data_range):
+    directory_path = "./data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
+    save_range_json(product_type, location_name, date_start, date_end, data_range)
+    save_range_peaks(directory_path, "data")
 
-date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=5, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2020, month=6, day=1, hour=0, minute=0, second=0, microsecond=0)
-data_range = 30
+def main_peak_finder_sabetta():
+    values = {
+        "product_types": ["NO2", "CO", "CH4", "SO2"],
+        "locations_name": ["Bering Strait", "Sabetta Port"],
+    }
+    product_type = values["product_types"][0]
+    location_name = values["locations_name"][1]
+    date = datetime.datetime.now()
+    date_start = date.replace(year=2021, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
+    date_end = date.replace(year=2021, month=11, day=1, hour=0, minute=0, second=0, microsecond=0)
+    data_range = 30
+    main_peak_finder(product_type, location_name, date_start, date_end, data_range)
 
-directory_path = "../data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
+def main_peak_finder_default(product_type, location_name, date_start, date_end):
+    main_peak_finder("NO2", location_name, date_start, date_end, 30)
 
-#save_range_json(product_type, location_name, date_start, date_end, data_range)
 
-#create_images_from_json(directory_path, "data")
-
-#get_range_peaks(directory_path, "data")
-
-data_set = calculate_means(date_start, date_end)
-print_image_given_matrix(data_set)
+#main_peak_finder_sabetta()

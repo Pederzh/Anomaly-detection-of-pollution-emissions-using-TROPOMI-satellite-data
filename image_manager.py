@@ -15,6 +15,8 @@ from osgeo import osr
 import numpy as np
 import pathlib
 import os, sys
+from pathlib import Path
+from scipy.ndimage import median_filter, median, maximum_filter, gaussian_filter
 
 # Your client credentials
 client_id = '982de4f4-dade-4f98-9b49-4374cd896bb6'
@@ -39,6 +41,35 @@ def stat_to_image(data, key, precision):
             else: rgb_matrix[y].append([255, 255, 255, 0])
     return rgb_matrix
 
+def get_lowed_image(data_set, data_range):
+    values_set = []
+    freq_set = []
+    lowed = 0
+    for row in data_set:
+        for value in row:
+            values_set.append(value)
+    min_val = min(values_set)
+    max_val = max(values_set)
+    tot_freq = (max_val - min_val) / data_range
+    for i in range(int(tot_freq)+1):
+        freq_set.append(0)
+    for value in values_set:
+        freq_set[int((value - min_val) / data_range)] += 1
+    max_freq = max(freq_set)
+    for i in range(len(freq_set)):
+        if freq_set[i] == max_freq:
+            lowed = min_val + (i) * data_range
+            break
+    new_data_set = []
+    for y in range(len(data_set)):
+        new_data_set.append([])
+        for x in range(len(data_set[y])):
+            #new_data_set[y].append(0)
+            #if data_set[y][x] > lowed: new_data_set[y][x] = data_set[y][x]
+            new_data_set[y].append(data_set[y][x] - lowed)
+            if new_data_set[y][x] < 0: new_data_set[y][x] = 0
+    return new_data_set
+
 def get_standard_rgb_values(value):
     """
     [minVal, [0, 0, 0.5]],
@@ -49,11 +80,9 @@ def get_standard_rgb_values(value):
     [maxVal, [0.5, 0, 0]]
     """
     rgb = [0, 0, 0, 255]
-    if value == -1 or value == None: return [0, 0, 0, 0]
+    if (value == -1): return [0, 0, 0, 0]
     precision = 1016  # given by the rgb composition
     prop = value / precision
-    rgb[3] = round(prop * 1016) + 50
-    if rgb[3] > 255: rgb[3] = 255
     # [0, 0, 1]
     if prop <= 0.125:
         min = 0
@@ -169,6 +198,12 @@ def get_json_content_w_name(directory_path, name):
         data = json.load(json_file)
     return data
 
+def save_image(directory_path, file_name, rgbt_matrix):
+    Path(directory_path).mkdir(parents=True, exist_ok=True)
+    array = np.array(rgbt_matrix, dtype=np.uint8)
+    image = Image.fromarray(array)
+    image.save(directory_path + file_name + ".png", format="png")
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #              PARAMETERS DEFINITION
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -203,16 +238,49 @@ file_name = info_name + date_start.strftime("%Y-%m-%d") + "_" + date_end.strftim
 directory_path = "./data/" + location_name + "/" + product_type + "/Statistics/"
 print("from file: " + directory_path + file_name)
 
-directory_path = "../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_2/"
-data_set = get_json_content_w_name(directory_path, "data")
-directory_path = "../Data/NO2/Sabetta Port/images/2021/05/03/lowed/"
-file_name = "mean"
-directory_path = "../Data/NO2/Sabetta Port/range_data/30/"
+
+directory_path = "../Data/NO2/Sabetta Port/images/2021/03/14/filled/"
+directory_path = "../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_3/"
+file_name = "data"
+data_set = get_json_content_w_name(directory_path, file_name)["2021-03-14"]
+#data_set = get_lowed_image(data_set, 10)
+"""directory_path = "../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_3/"
+file_name = "data"
+data_set_2 = get_json_content_w_name(directory_path, file_name)["2021-03-14"]
+for y in range(len(data_set)):
+    for x in range(len(data_set[y])):
+        data_set[y][x] += data_set_2[y][x]"""
+
+
+
+rgba_data_set = []
+#data_set[4][73] = 0
+for y in range(len(data_set)):
+    for x in range(len(data_set[y])):
+        data_set[y][x] = data_set[y][x] * 1
+for y in range(len(data_set)):
+    rgba_data_set.append([])
+    for x in data_set[y]:
+        rgba_data_set[y].append(get_standard_rgb_values(x))
+directory_write = "../Thesis images/10/"
+file_write = "gaussian_reconstruction_2021_03_14_peak_3"
+save_image(directory_write, file_write, rgba_data_set)
+
+"""directory_path = "../Data/NO2/Sabetta Port/range_data/30/"
 file_name = "data"
 data_set = get_json_content_w_name(directory_path, file_name)["2021-04-01"]
 
-directory_write = "../Thesis images/"
-file_write = "2021-04-01"
+directory_write = "../Thesis images/0/clean plume/"
+file_write = "2021-04-29_3"
+"""
+
+
+
+
+
+
+
+
 
 
 data = data_set

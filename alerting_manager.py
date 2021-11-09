@@ -1,13 +1,18 @@
 import datetime
 import io
-import json
+
 import math
 from pathlib import Path
 
 import copy
 import numpy
 import sys
+from statsmodels.tsa.seasonal import seasonal_decompose
+import statsmodels.api as sm
+from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
+from tqdm import tqdm_notebook
+from itertools import product
 import scipy.ndimage
 import scipy.fftpack
 import scipy.signal
@@ -30,86 +35,6 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 
 
-def get_rgb_values(value):
-    """
-    [minVal, [0, 0, 0.5]],
-    [minVal + 0.125 * diff, [0, 0, 1]],
-    [minVal + 0.375 * diff, [0, 1, 1]],
-    [minVal + 0.625 * diff, [1, 1, 0]],
-    [minVal + 0.875 * diff, [1, 0, 0]],
-    [maxVal, [0.5, 0, 0]]
-    """
-    rgb = [0, 0, 0, 255]
-    if value == -1 or value == None: return [0, 0, 0, 0]
-    precision = 1016  # given by the rgb composition
-    prop = value / precision
-    # [0, 0, 1]
-    if prop <= 0.125:
-        min = 0
-        max = 0.125
-        rangeVal = max - min
-        new_value = round((prop - min) / rangeVal * 127)
-        rgb[2] = 128 + new_value
-        return rgb
-    # [0, 1, 1]
-    if prop <= 0.375:
-        min = 0.125
-        max = 0.375
-        rangeVal = max - min
-        new_value = round((prop - min)/rangeVal * 255)
-        rgb[1] = new_value
-        rgb[2] = 255
-        return rgb
-    # [1, 1, 0]
-    if prop <= 0.625:
-        min = 0.375
-        max = 0.625
-        rangeVal = max - min
-        new_value = round((prop - min)/rangeVal * 255)
-        rgb[0] = new_value
-        rgb[1] = 255
-        rgb[2] = 255 - new_value
-        return rgb
-    # [1, 0, 0]
-    if prop <= 0.875:
-        min = 0.625
-        max = 0.875
-        rangeVal = max - min
-        new_value = round((prop - min) / rangeVal * 255)
-        rgb[0] = 255
-        rgb[1] = 255 - new_value
-        return rgb
-    # [0.5, 0, 0]
-    min = 0.875
-    max = 1
-    rangeVal = max - min
-    new_value = round(127 - (prop - min) / rangeVal * 127)
-    rgb[0] = 128 + new_value
-    return rgb
-
-def create_image_from_matrix(data):
-    image = []
-    for y in range(len(data)):
-        image.append([])
-        for x in range(len(data)):
-            image[y].append(get_rgb_values(data[y][x]))
-    return image
-
-def save_json(directory_path, json_file, json_file_name):
-    Path(directory_path).mkdir(parents=True, exist_ok=True)
-    with open(directory_path + json_file_name + ".json", 'w') as outfile:
-        json.dump(json_file, outfile)
-
-def save_image(directory_path, file_name, rgbt_matrix):
-    Path(directory_path).mkdir(parents=True, exist_ok=True)
-    array = np.array(rgbt_matrix, dtype=np.uint8)
-    image = Image.fromarray(array)
-    image.save(directory_path + file_name + ".png", format="png")
-
-def print_image_given_matrix(matrix):
-    image = create_image_from_matrix(matrix)
-    plt.imshow(image)
-    plt.show()
 
 def get_json_content_w_name(directory_path, name):
     with open(directory_path + name + ".json") as json_file:
@@ -124,8 +49,33 @@ def get_json_content_w_name(directory_path, name):
 
 
 
+def gauss_value(parameters, point):
+    A = parameters[0]
+    B = parameters[1]
+    y = point[0]
+    x = point[1]
+    return (A * pow(math.e, -B * (pow(x, 2) + pow(y, 2))))
 
+def get_gaussian_parameters(volume):
+    A = pow(volume, 2 / 3) / pow(math.pi, 2 / 3)
+    B = 1 / (pow(A, 1 / 2))
+    return [A, B, volume]
 
+def create_gaussian_image_w_parameters(image, parameters, point):
+    gaussian_image = []
+    for y in range(len(image)):
+        gaussian_image.append([])
+        for x in range(len(image[y])):
+            gauss_point = [
+                abs(point[0] - y),
+                abs(point[1] - x)
+            ]
+            gaussian_image[y].append(round(gauss_value(parameters, gauss_point)))
+    return gaussian_image
+
+def create_gaussian_image(image, volume, point):
+    parameters = get_gaussian_parameters(volume)
+    return create_gaussian_image_w_parameters(image, parameters, point)
 
 
 def get_parameters_mobile_mean(data_set, days_range):
@@ -234,6 +184,24 @@ def get_parameters_mean(data_set, day_range, type):
         parameters_list.append(obj)
     return parameters_list
 
+def get_new_coordinates(lat, lon, distance_lat, distance_lon):
+    lat_new = lat + (180 / math.pi) * (distance_lat / 6378137)
+    lon_new = lon + (180 / math.pi) * (distance_lon / 6378137) / math.cos(math.pi/180*lat)
+    return [lat_new, lon_new]
+
+def get_new_longitude(lat, lon, distance_lon):
+    return get_new_coordinates(lat, lon, 0, distance_lon)[1]
+
+def get_new_latitude(lat, lon, distance_lat):
+    return get_new_coordinates(lat, lon, distance_lat, 0)[0]
+
+def get_bbox_coordinates_from_center(coordinates, distance):
+    new_coordinates = []
+    lat = coordinates[0]
+    lon = coordinates[1]
+    new_coordinates.append(get_new_latitude(lat, lon, distance[0]))
+    new_coordinates.append(get_new_longitude(lat, lon, distance[1]))
+    return new_coordinates
 
 
 
@@ -247,45 +215,6 @@ def get_parameters_mean(data_set, day_range, type):
 
 
 
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#
-#                                  LINEAR REGRESSION
-#
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-def linear_regression_test(data_set_mean, target):
-    df_array = []
-    for i in range(len(data_set_mean)):
-        data = {
-            "target": data_set_mean[i]["parameters"][target],
-            "year": data_set_mean[i]["date"].year,
-            "day": data_set_mean[i]["date"].day,
-        }
-        for i in range(12):
-            data["month_" + str(i+1)] = 0
-        for i in range(7):
-            data["day_of_week" + str(i+1)] = 0
-        data["month_" + str(data_set_mean[i]["date"].month)] = 1
-        data["day_of_week" + str(data_set_mean[i]["date"].weekday())] = 1
-        df_array.append(data)
-    df = pd.DataFrame(df_array)
-
-    # splitting in target and parameters
-    y = df["target"]
-    x = df.drop("target", axis=1)
-
-    # splitting the data
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.05, random_state = 210)
-
-    # fitting the training data
-    LR = LinearRegression()
-    LR.fit(x_train, y_train)
-    y_prediction = LR.predict(x_test)
-    print(y_prediction)
-    print(list(y_test))
 
 
 
@@ -304,7 +233,7 @@ def linear_regression_test(data_set_mean, target):
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-def SARIMA_test(data_set_mean, target, d_order, s_order):
+def SARIMA_test(data_set_mean, target, d_order, s_order, day_range_prediction):
 
     y = []
     x = []
@@ -312,134 +241,176 @@ def SARIMA_test(data_set_mean, target, d_order, s_order):
         y.append(data_set_mean[i]["parameters"][target])
         x.append(i)
 
-    plt.scatter(x, y)
-    plt.show()
 
-    for i in range(10):
-        yy = []
-        pos = []
-        yyy = 0
-        len_train = i + 158
-        for i in range(len(y) - len_train):
-            if i < len(y) - len_train - 1:
-                yy.append(y[i])
-                pos.append(i)
-            else:
-                yyy = y[i]
-        model = SARIMAX(yy, order=(d_order[0], d_order[1], d_order[2]), seasonal_order=(s_order[0], s_order[1], s_order[2], s_order[3]))
-        model_fit = model.fit(disp=False)
-        # make prediction
-        yhat = model_fit.predict(len(yy), len(yy))
-        print("prediction at pos " + str(len(yy)))
-        print("prediction: " + str(yhat))
-        print("actual value: " + str(yyy))
-        print(" ")
-
-
-
-
-
-
+    yy = []
+    pos = []
+    yyy = []
+    len_train = day_range_prediction
+    for j in range(len(y)):
+        if j < len(y) - len_train - 1:
+            yy.append(y[j])
+            pos.append(j)
+        else:
+            if len(yyy) < len_train:
+                yyy.append(y[j])
+    model = SARIMAX(yy, order=(d_order[0], d_order[1], d_order[2]),
+                    seasonal_order=(s_order[0], s_order[1], s_order[2], s_order[3]))
+    model_fit = model.fit(disp=False)
+    # make prediction
+    yhat = model_fit.predict(len(yy), len(yy) + day_range_prediction - 1)
+    return {
+        "prediction": yhat,
+        "actual_value": yyy
+    }
 
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
-#                           POLYNOMIAL REGRESSION
+#                                    OTHER FUNCTION
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-def polynomial_regression_test(data_set, target, order):
-    df_array = []
-    for i in range(len(data_set)):
-        data = {
-            "target": data_set[i]["parameters"][target],
-            "position": i,
+def get_error(prediction, actual):
+    if actual != np.nan:
+        return abs(prediction - actual)
+    else:
+        return 0
+
+def get_RMSE(pred, act, max_error_position):
+    mse = 0
+    tot = 0
+    for i in range(len(pred)):
+        if act[i] != np.nan and i != max_error_position:
+            mse += pow(pred[i] - act[i], 2)
+            tot += 1
+    mse = mse / tot
+    rmse = math.sqrt(mse)
+    return rmse
+
+def get_mean_from_RMSE(pred, act, max_error_position):
+    new_pred = 0
+    new_act = 0
+    tot = 0
+
+    for i in range(len(pred)):
+        if act[i] != np.nan and i != max_error_position:
+            new_pred += pred[i]
+            new_act += act[i]
+            tot += 1
+    new_pred = new_pred / tot
+    new_act = new_act / tot
+    return [new_pred, new_act]
+
+
+
+
+
+
+
+
+
+
+
+
+def main_alerter(product_type, location_name, date_start, date_end, data_range, peak_id, parameter, day_range_prediction):
+
+    directory_path = "./Data/" + product_type + "/" + location_name + "/range_data/"
+    directory_path = directory_path + str(data_range) + "/peaks/"
+    peaks = get_json_content_w_name(directory_path, "peaks")
+    if peaks == None: return {"error": "peaks file not found, please reprocess"}
+    if len(peaks) == 0: return {"error": "no peaks found"}
+    image_ccs = None
+    for peak in peaks:
+        if peak["id"] == peak_id:
+            image_ccs = peak["point"]
+    if image_ccs == None: return None
+
+    map_ccs = get_json_content_w_name("./Data/" + product_type + "/" + location_name + "/", "coordinates")
+
+    directory_path = "./Data/" + product_type + "/" + location_name +  "/range_data/"
+    directory_path = directory_path + str(data_range) + "/gaussian_shapes/peak_" + str(peak_id) + "/"
+    data_set = get_json_content_w_name(directory_path , "parameters")
+
+    # DATA PREPARATION
+    new_data = []
+    for day_counter in range(int((date_end - date_start).days)):
+        date = date_start + datetime.timedelta(days=day_counter)
+        date_str = date.strftime("%Y-%m-%d")
+        if date_str in data_set: new_data.append({
+            "parameters": data_set[date_str],
+            "date": date_str
+        })
+        else: new_data.append({
+            "parameters": [np.nan, np.nan, np.nan],
+            "date": date_str
+        })
+
+    # PREDICTION
+    pred = SARIMA_test(new_data, parameter, [0, 1, 3], [1, 1, 1, 4], day_range_prediction)
+
+    # ALARMING
+    max_difference = 20000
+    max_error = 0
+    max_error_position = 0
+    for i in range(len(pred["prediction"])):
+        error = get_error(pred["prediction"][i], pred["actual_value"][i])
+        if error > max_error:
+            max_error = error
+            max_error_position = i
+    rmse = get_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
+    new_pred = get_mean_from_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
+
+
+    flag = "GREEN"
+    if rmse > max_difference:
+        if rmse > max_difference * 2:
+            flag = "RED"
+        else:
+            flag = "ORANGE"
+    else:
+        if rmse > max_difference / 2:
+            flag = "YELLOW"
+
+    pred_parameters = get_gaussian_parameters(new_pred[0])
+    actl_parameters = get_gaussian_parameters(new_pred[1])
+    distance = [
+        image_ccs[0] - 49,
+        image_ccs[1] - 49
+    ]
+    final_ccs = get_bbox_coordinates_from_center(map_ccs["coordinates"], distance)
+
+    responce = {
+        "status": flag,
+        "forecasted_value": {
+            "peak": pred_parameters[0],
+            "attenuation": pred_parameters[1],
+            "volume": pred_parameters[2]
+        },
+        "actual_value": {
+            "peak": actl_parameters[0],
+            "attenuation": actl_parameters[1],
+            "volume": actl_parameters[2]
+        },
+        "other_information": {
+            "coordinates": final_ccs,
+            "days_range": day_range_prediction,
+            "date": date_end,
         }
-        df_array.append(data)
-    df = pd.DataFrame(df_array)
-
-    # splitting in target and parameters
-    y = df["target"]
-    x = df.drop("target", axis=1)
-    x = df["position"]
-
-    # splitting the data
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.05, random_state = 210)
-
-    mymodel = numpy.poly1d(numpy.polyfit(x, y, order))
-    myline = numpy.linspace(0, len(data_set), 100)
-    plt.scatter(x, y)
-    plt.plot(myline, mymodel(myline))
-    plt.show()
+    }
+    return responce
 
 
 
+def main_alerter_sabetta():
+
+    date = datetime.datetime.now()
+    date_start = date.replace(year=2021, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
+    date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
+    return main_alerter("NO2", "Sabetta Port", date_start, date_end, 30, 2, 2, 10)
 
 
+def main_alerter_default(location_name, date_start, date_end, peak_id):
 
-
-
-
-
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#
-#                                       MAIN
-#
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-data_set = get_json_content_w_name("../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_2/", "parameters")
-old_data_set = get_json_content_w_name("../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_2/", "old_parameters")
-prop_2020_to_2021 = 2.4
-
-data_set_mean_mobile = get_parameters_mobile_mean(data_set, 11)
-data_set_normal = get_parameters(data_set)
-data_set_mean = get_parameters_mean(data_set, 10, "cleaned_mean")
-
-data = data_set_normal
-for i in range(len(data)):
-    data[i]["parameters"][0] = data[i]["parameters"][2] / math.pi
-
-
-new_data = []
-date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
-for day_counter in range(int((date_end - date_start).days)):
-    date = date_start + datetime.timedelta(days=day_counter)
-    date_str = date.strftime("%Y-%m-%d")
-    if date_str in data_set:
-        new_data.append({
-            "parameters": data_set[date_str]
-        })
-    if date_str in old_data_set:
-        old_data_set[date_str][0] = old_data_set[date_str][0] * prop_2020_to_2021
-        old_data_set[date_str][2] = old_data_set[date_str][2] * prop_2020_to_2021
-        new_data.append({
-            "parameters": old_data_set[date_str]
-        })
-    if date_str not in data_set and date_str not in old_data_set:
-        new_data.append({
-            "parameters": [np.nan, np.nan, np.nan]
-        })
-
-old_data_set_mean = get_parameters_mean(old_data_set, 10, "cleaned_mean")
-
-tot_data
-
-#linear_regression_test(data, 2)
-SARIMA_test(new_data, 2, [1, 1, 0], [0, 0, 0, 0])
-#polynomial_regression_test(old_data_set_mean, 2, 7)
-
-# SARIMAX
-# LSTM
-
-
-
-
-
+    return main_alerter("NO2", location_name, date_start, date_end, 30, peak_id, 2, 10)
 

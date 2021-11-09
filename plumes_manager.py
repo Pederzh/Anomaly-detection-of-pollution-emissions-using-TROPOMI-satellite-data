@@ -779,7 +779,6 @@ def set_neighbors_value(point, data_set):
 
 
 def two_dimensional_peak_finding(data_set):
-    sys.setrecursionlimit(10000)
     data_and_peaks = []
     for y in range(len(data_set)):
         data_and_peaks.append([])
@@ -830,13 +829,13 @@ def two_dimensional_peak_finding(data_set):
 
 
 
-def calculate_means(date_start, date_end):
+def calculate_means(date_start, date_end, product_type, location_name):
 
     mean_set = []
     tot = 0
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + "lowed" + "/"
         my_path = Path(directory_path)
@@ -863,11 +862,11 @@ def save_range_json(product_type, location_name, date_global_start, date_global_
         date_start = date_global_start + datetime.timedelta(days=day_counter)
         date_end = date_start + datetime.timedelta(days=data_range)
         print("at day " + date_start.strftime("%Y-%m-%d"))
-        month_set = calculate_means(date_start, date_end)
+        month_set = calculate_means(date_start, date_end, product_type, location_name)
         if month_set != None:
             months_set[date_start.strftime("%Y-%m-%d")] = month_set
 
-    directory_path = "../data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
+    directory_path = "./data/" + product_type + "/" + location_name + "/range_data/" + str(data_range) + "/"
     save_json(directory_path, months_set, "data")
 
 def create_images_from_json(directory_path, file_name):
@@ -910,25 +909,28 @@ def get_gaussian_parameters(data_set, plumes, plume_id):
                     if data_set[y][x] > max_value:
                         prop = plumes[y][x]["prop_height_from_top"]
                         max_value = data_set[y][x]
+
+    # OLD METHOD
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # FORMULA: A * e^(-Bx^2)
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    A = max_value
-    if prop > 0:
-        Xb = math.sqrt(area) / math.sqrt(math.pi)
-        B = - math.log(prop, math.e) / pow(Xb, 2)
-    else:
-        B = A * math.pi / volume
-    """x = 5
-    y = 5
-    print("prop: " + str(prop))
-    print("volume: " + str(volume))
-    print("area: " + str(area))
-    print("max: " + str(max_value))
-    print("Xb: " + str(Xb))
-    print("A: " + str(A))
-    print("B: " + str(B))
-    print(A * pow(math.e, -B * (x*x + y*y)))"""
+    def old_method():
+        A = max_value
+        if prop > 0:
+            Xb = math.sqrt(area) / math.sqrt(math.pi)
+            B = - math.log(prop, math.e) / pow(Xb, 2)
+        else:
+            B = A * math.pi / volume
+        return [A, B, volume]
+
+    # NEW METHOD (SAME GAUSS SHAPE)
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # FORMULA: A * e^(-(1/A)x^2)
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #A = pow(volume, 2/3) / pow(math.pi, 1/3)
+    A = pow(volume, 2/3) / pow(math.pi, 2/3)
+    B = 1/(pow(A, 1/2))
+    #print(volume)
     return [A, B, volume]
 
 
@@ -1052,7 +1054,7 @@ def get_image_gaussian_plumes(data_set, peaks, format):
 
 
 
-def get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end):
+def get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, product_type, location_name, date_start, date_end):
 
     peaks = get_json_content_w_name(directory_path + additional_peaks_path + "peaks/", "peaks")
     gaussian_shape_list = {}
@@ -1060,7 +1062,7 @@ def get_all_images_plumes(directory_path, additional_peaks_path, additional_imag
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_img_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_img_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_img_path = directory_img_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_img_path = directory_img_path + date.strftime("%d") + "/" + "balanced" + "/"
         my_path = Path(directory_img_path)
@@ -1125,7 +1127,7 @@ def create_peaks_id(directory_path, file_name):
 
 
 
-def get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end):
+def get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, product_type, location_name, date_start, date_end):
 
     peaks = get_json_content_w_name(directory_path + additional_peaks_path + "peaks/", "peaks")
     gaussian_shape_list = {}
@@ -1134,7 +1136,7 @@ def get_all_parameters_plumes(directory_path, additional_peaks_path, additional_
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_img_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_img_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_img_path = directory_img_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_img_path = directory_img_path + date.strftime("%d") + "/" + "balanced" + "/"
         my_path = Path(directory_img_path)
@@ -1201,7 +1203,7 @@ def create_dir_mean_from_json(directory_path):
         #save_json(directory_path, mean_matrix, "mean")
 
 def create_all_mean_json(product_type, location_name, peak):
-    directory_path = "../data/" + product_type + "/" + location_name + "/range_data/30/gaussian_shapes/"
+    directory_path = "./data/" + product_type + "/" + location_name + "/range_data/30/gaussian_shapes/"
     directory_path = directory_path + "peak_" + str(peak) + "/"
     my_path = Path(directory_path)
     if my_path.is_dir():
@@ -1211,41 +1213,60 @@ def create_all_mean_json(product_type, location_name, peak):
 
 
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                       MAIN
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-values = {
-    "product_types": ["NO2", "CO", "CH4", "SO2"],
-    "locations_name": ["Bering Strait", "Sabetta Port"],
-    "minQas": ["high", "all"],
-    "image_types": ["unprocessed", "balanced"]
-}
 
-sys.setrecursionlimit(10000)
-product_type = values["product_types"][0]
-location_name = values["locations_name"][1]
-minQa = values["minQas"][1]
-image_type = values["image_types"][1]
 
-date = datetime.datetime.now()
-date_start = date.replace(year=2020, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-data_range = 30
+def main_reconstructor(product_type, location_name, date_start, date_end, data_range):
+    sys.setrecursionlimit(10000)
+    directory_path = "./data/" + product_type + "/" + location_name + "/"
+    additional_peaks_path = "range_data/" + str(data_range) + "/"
+    additional_images_path = "images/"
+    create_peaks_id(directory_path + additional_peaks_path + "peaks/", "data")
+    get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, product_type,
+                              location_name, date_start, date_end)
 
-directory_path = "../data/" + product_type + "/" + location_name + "/"
-additional_peaks_path = "range_data/" + str(data_range) + "/"
-additional_images_path = "images/"
 
-#save_range_json(product_type, location_name, date_start, date_end, data_range)
 
-#create_images_from_json(directory_path, "data")
+def main_reconstructor_sabetta():
+    values = {
+        "product_types": ["NO2", "CO", "CH4", "SO2"],
+        "locations_name": ["Bering Strait", "Sabetta Port"],
+    }
 
-#create_peaks_id(directory_path + additional_peaks_path + "peaks/", "data")
+    sys.setrecursionlimit(10000)
+    product_type = values["product_types"][0]
+    location_name = values["locations_name"][1]
 
-#get_all_images_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
+    date = datetime.datetime.now()
+    date_start = date.replace(year=2021, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
+    date_end = date.replace(year=2021, month=11, day=1, hour=0, minute=0, second=0, microsecond=0)
+    data_range = 30
 
-get_all_parameters_plumes(directory_path, additional_peaks_path, additional_images_path, date_start, date_end)
+    main_reconstructor(product_type, location_name, date_start, date_end, data_range)
+
+def main_reconstructor_default(location_name, date_start, date_end):
+    main_reconstructor("NO2", location_name, date_start, date_end, 30)
+
+
+
+#main_reconstructor_sabetta()
+
+
+
+
+
+"""sys.setrecursionlimit(10000)
+directory_path = "../data/NO2/Sabetta Port/"
+data_set = get_json_content_w_name(directory_path+"images/2021/08/12/balanced/", "mean")
+data_set = get_lowed_image(data_set, 10)
+print_image_given_matrix(data_set)
+end_set = get_image_gaussian_plumes(data_set, [{"id": 3, "point": [65, 80]}], "image")
+print_image_given_matrix(end_set["3"])
+vol = 0
+for y in end_set["3"]:
+    for x in y:
+        vol += x
+print(vol)"""
 
 #mean = create_all_mean_json(product_type, location_name, 3)
 #print_image_given_matrix(mean)

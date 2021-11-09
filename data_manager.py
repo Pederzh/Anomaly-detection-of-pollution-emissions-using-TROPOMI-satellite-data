@@ -17,17 +17,25 @@ from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
 
+
+
 wieghts = {
     "0": 1,
-    "1": 4,
-    "2": 7,
-    "3": 8,
-    "4": 10,
-    "5": 7,
-    "6": 6,
-    "7": 3,
-    "8": 2,
+    "1": 1,
+    "2": 1,
+    "3": 1,
+    "4": 1,
+    "5": 1,
+    "6": 1,
+    "7": 1,
+    "8": 1,
     "9": 1,
+    "10": 1,
+    "11": 1,
+    "12": 1,
+    "13": 1,
+    "14": 1,
+    "15": 1
 }
 
 
@@ -199,7 +207,7 @@ def create_all_json_from_images(product_type, location_name, date_start, date_en
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + image_type + "/"
         my_path = Path(directory_path)
@@ -275,7 +283,7 @@ def create_all_filled_json(product_type, location_name, date_start, date_end):
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
@@ -488,7 +496,7 @@ def create_all_interpolated_json(product_type, location_name, date_start, date_e
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
@@ -573,7 +581,7 @@ def create_all_lowed_json(product_type, location_name, date_start, date_end):
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
@@ -721,7 +729,7 @@ def create_all_balanced_json(product_type, location_name, date_start, date_end):
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/"
         my_path = Path(directory_path)
@@ -835,7 +843,7 @@ def create_images_from_all_json(product_type, location_name, date_start, date_en
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + image_type + "/"
         my_path = Path(directory_path)
@@ -884,7 +892,7 @@ def create_all_mean_json(product_type, location_name, date_start, date_end, imag
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + image_type + "/"
         my_path = Path(directory_path)
@@ -906,7 +914,7 @@ def create_images_from_all_mean_json(product_type, location_name, date_start, da
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         print("at day " + date.strftime("%Y-%m-%d"))
-        directory_path = "../data/" + product_type + "/" + location_name + "/images/"
+        directory_path = "./data/" + product_type + "/" + location_name + "/images/"
         directory_path = directory_path + date.strftime("%Y") + "/" + date.strftime("%m") + "/"
         directory_path = directory_path + date.strftime("%d") + "/" + image_type + "/"
         my_path = Path(directory_path)
@@ -939,115 +947,77 @@ def create_images_from_all_mean_json(product_type, location_name, date_start, da
 
 
 
+def main_processer(product_type, location_name, date_start, date_end, range_wieghts):
+    keys = list(range_wieghts.keys())
+    for i in keys:
+        wieghts[i] = range_wieghts[i]
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #       TO CREATE FILLED JSON FILES
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    create_all_filled_json(product_type, location_name, date_start, date_end)
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #       TO CREATE INTERPOLATED JSON FILES
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    create_all_interpolated_json(product_type, location_name, date_start, date_end)
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #       TO CREATE BALANCED JSON FILES
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    create_all_balanced_json(product_type, location_name, date_start, date_end)
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #       TO CREATE LOWED JSON FILES
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    create_all_lowed_json(product_type, location_name, date_start, date_end)
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #               DAILY MEAN IMAGE
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    create_all_mean_json(product_type, location_name, date_start, date_end, "filled")
+    create_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
+    create_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
+    create_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                       MAIN
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-values = {
-    "product_types": ["NO2", "CO", "CH4", "SO2"],
-    "locations_name": ["Bering Strait", "Sabetta Port"],
-    "minQas": ["high", "all"],
-    "image_types": ["unprocessed", "balanced", "lowed", "interpolated", ]
-}
-date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=10, day=1, hour=0, minute=0, second=0, microsecond=0)
-
-product_type = values["product_types"][0]
-location_name = values["locations_name"][1]
-minQa = values["minQas"][1]
-image_type = values["image_types"][2]
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#           TO CREATE ALL JSON FILES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_json_from_images(product_type, location_name, date_start, date_end, "unprocessed")
-
-
-
-
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#       TO CREATE FILLED JSON FILES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_filled_json(product_type, location_name, date_start, date_end)
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   TO CREATE ALL IMAGES FROM FILLED JSON
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_json(product_type, location_name, date_start, date_end, "filled")
+def main_processer_sabetta():
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #                       MAIN
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    values = {
+        "product_types": ["NO2", "CO", "CH4", "SO2"],
+        "locations_name": ["Bering Strait", "Sabetta Port"],
+    }
+    sabetta_wieghts = {
+        "0": 1,
+        "1": 4,
+        "2": 7,
+        "3": 8,
+        "4": 10,
+        "5": 7,
+        "6": 6,
+        "7": 3,
+        "8": 2,
+        "9": 1,
+    }
+    keys = list(sabetta_wieghts.keys())
+    for i in keys:
+        wieghts[i] = sabetta_wieghts[i]
+    date = datetime.datetime.now()
+    date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    date_end = date.replace(year=2021, month=11, day=1, hour=0, minute=0, second=0, microsecond=0)
+    product_type = values["product_types"][0]
+    location_name = values["locations_name"][1]
+    main_processer(product_type, location_name, date_start, date_end)
 
 
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#       TO CREATE INTERPOLATED JSON FILES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_interpolated_json(product_type, location_name, date_start, date_end)
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   TO CREATE ALL IMAGES FROM INTERPOLATED JSON
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_json(product_type, location_name, date_start, date_end, "interpolated")
-
-
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#       TO CREATE BALANCED JSON FILES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_balanced_json(product_type, location_name, date_start, date_end)
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   TO CREATE ALL IMAGES FROM BALANCED JSON
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_json(product_type, location_name, date_start, date_end, "balanced")
+def main_processer_default(location_name, date_start, date_end):
+    default_weights = {}
+    for i in range(16):
+        default_weights[str(i)] = 1
+    main_processer("NO2", location_name, date_start, date_end, default_weights)
 
 
 
 
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#       TO CREATE LOWED JSON FILES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_all_lowed_json(product_type, location_name, date_start, date_end)
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   TO CREATE ALL IMAGES FROM LOWED JSON
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#create_images_from_all_json(product_type, location_name, date_start, date_end, "lowed")
-
-
-
-
-
-
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#               JSON MEAN OF IMAGES
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-#create_all_mean_json(product_type, location_name, date_start, date_end, "filled")
-#create_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
-#create_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
-#create_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   TO CREATE ALL IMAGES FROM ALL MEAN JSON
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "filled")
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "interpolated")
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "balanced")
-#create_images_from_all_mean_json(product_type, location_name, date_start, date_end, "lowed")
-
-
-
-
+"""date = datetime.datetime.now()
+date_start = date.replace(year=2021, month=5, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=5, day=3, hour=0, minute=0, second=0, microsecond=0)
+coordinates = "[64.17296424691946,-51.68451411171911]"
+main_processer_default(coordinates, date_start, date_end)"""
 
