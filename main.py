@@ -132,28 +132,6 @@ def main_forecasting(product_type, location_name, date_start, date_end, data_ran
 
 
 
-date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=12, day=3, hour=0, minute=0, second=0, microsecond=0)
-default_weights = {}
-client_id = '982de4f4-dade-4f98-9b49-4374cd896bb6'
-client_secret = '%p/,0Yrd&/mO%cdudUsby[>@]MB|2<rf1<NnXkZr'
-for i in range(16):
-    default_weights[str(i)] = 1
-main_preparation(date_start, date_end, 1, 1, [1,1], "Sabetta Port", "NO2", default_weights, 30,
-                 client_id, client_secret)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
