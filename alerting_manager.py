@@ -1,6 +1,6 @@
 import datetime
 import io
-import json
+
 import math
 from pathlib import Path
 
@@ -318,8 +318,8 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     directory_path = "./Data/" + product_type + "/" + location_name + "/range_data/"
     directory_path = directory_path + str(data_range) + "/peaks/"
     peaks = get_json_content_w_name(directory_path, "peaks")
-    if peaks == None: return None
-    if len(peaks) == 0: return None
+    if peaks == None: return {"error": "peaks file not found, please reprocess"}
+    if len(peaks) == 0: return {"error": "no peaks found"}
     image_ccs = None
     for peak in peaks:
         if peak["id"] == peak_id:
@@ -414,5 +414,3 @@ def main_alerter_default(location_name, date_start, date_end, peak_id):
 
     return main_alerter("NO2", location_name, date_start, date_end, 30, peak_id, 2, 10)
 
-
-print(main_alerter_sabetta())

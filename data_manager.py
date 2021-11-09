@@ -1015,9 +1015,9 @@ def main_processer_default(location_name, date_start, date_end):
 
 
 
-date = datetime.datetime.now()
+"""date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=5, day=1, hour=0, minute=0, second=0, microsecond=0)
 date_end = date.replace(year=2021, month=5, day=3, hour=0, minute=0, second=0, microsecond=0)
 coordinates = "[64.17296424691946,-51.68451411171911]"
-main_processer_default(coordinates, date_start, date_end)
+main_processer_default(coordinates, date_start, date_end)"""
 

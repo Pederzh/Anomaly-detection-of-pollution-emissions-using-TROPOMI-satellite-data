@@ -1,56 +1,159 @@
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
-# Your client credentials
+import datetime
+import json
+from pathlib import Path
+
+from data_downloader_hours import main_downloader
+from data_manager import main_processer
+from peaks_manager import main_peak_finder
+from plumes_manager import main_reconstructor
+from alerting_manager import main_alerter
+
+
+
+def get_json_content_w_name(directory_path, name):
+    with open(directory_path + name + ".json") as json_file:
+        data = json.load(json_file)
+    return data
+
+def get_ranges_to_download(date_start, date_end, location_name, product_type):
+    date_ranges = []
+    date_range = {}
+    for day_counter in range(int((date_end - date_start).days) - 1):
+        date_act = date_start + datetime.timedelta(days=day_counter)
+        date_str = date_act.strftime("%Y-%m-%d")
+        date_str = date_str.split("-")
+        directory_path = "./Data/" + product_type + "/" + location_name + "/images/"
+        directory_path += date_str[0] + "/" + date_str[1] + "/" + date_str[2] + "/unprocessed/"
+        my_path = Path(directory_path)
+        if not my_path.is_dir():
+            if "date_start" not in date_range.keys():
+                date_range["date_start"] = date_act
+        else:
+            if "date_start" in date_range.keys():
+                date_range["date_end"] = date_act
+                date_range["days"] = (date_range["date_end"] - date_range["date_start"]).days
+                date_ranges.append(date_range)
+                date_range = {}
+    if "date_start" in date_range.keys():
+        date_range["date_end"] = date_end
+        date_range["days"] = (date_range["date_end"] - date_range["date_start"]).days
+        date_ranges.append(date_range)
+    return date_ranges
+
+def get_ranges_to_process(date_start, date_end, location_name, product_type):
+    date_ranges = []
+    date_range = {}
+    for day_counter in range(int((date_end - date_start).days) - 1):
+        date_act = date_start + datetime.timedelta(days=day_counter)
+        date_str = date_act.strftime("%Y-%m-%d")
+        date_str = date_str.split("-")
+        directory_path = "./Data/" + product_type + "/" + location_name + "/images/"
+        directory_path += date_str[0] + "/" + date_str[1] + "/" + date_str[2] + "/lowed/"
+        my_file = Path(directory_path + "data.json")
+        if not my_file.is_file():
+            if "date_start" not in date_range.keys():
+                date_range["date_start"] = date_act
+        else:
+            if "date_start" in date_range.keys():
+                date_range["date_end"] = date_act
+                date_range["days"] = (date_range["date_end"] - date_range["date_start"]).days
+                date_ranges.append(date_range)
+                date_range = {}
+    if "date_start" in date_range.keys():
+        date_range["date_end"] = date_end
+        date_range["days"] = (date_range["date_end"] - date_range["date_start"]).days
+        date_ranges.append(date_range)
+    return date_ranges
+
+def main_preparation(date_start, date_end, start_h, range_h, coordinates, location_name, product_type, range_wieghts,
+                     range_for_mean, cliend_id, client_secret):
+
+    # DOWNLOADING IMAGES
+    ranges_to_download = get_ranges_to_download(date_start, date_end, location_name, product_type)
+    for to_download in ranges_to_download:
+        main_downloader(to_download["date_start"], to_download["date_end"], start_h, range_h, coordinates,
+                        location_name, product_type, cliend_id, client_secret)
+
+    # PROCESSING IMAGES
+    ranges_to_process = get_ranges_to_process(date_start, date_end, location_name, product_type)
+    for to_process in ranges_to_process:
+        main_processer(product_type, location_name, to_process["date_start"], to_process["date_end"], range_wieghts)
+
+    # PEAK FINDING AND GROTE
+    if len(ranges_to_process) > 0:
+        main_peak_finder(product_type, location_name, date_start, date_end, range_for_mean)
+        main_reconstructor(product_type, location_name, date_start, date_end, range_for_mean)
+
+
+
+
+def main_forecasting(product_type, location_name, date_start, date_end, data_range, range_prediction):
+
+    directory_path = "./Data/" + product_type + "/" + location_name + "/range_data/"
+    directory_path = directory_path + str(data_range)
+
+    # checking peaks file
+    my_file = Path(directory_path + "/peaks/peaks.json")
+    if not my_file.is_file(): return {"error": "peaks file not found, please process"}
+    peaks = get_json_content_w_name(directory_path + "/peaks/", "peaks")
+    if len(peaks) == 0: return {"error": "no peaks found"}
+
+    responce = {}
+    for peak in peaks:
+
+        # checking GROTE file
+        my_file = Path(directory_path + "/gaussian_shapes/peak_" + str(peak["id"])+ "/parameters.json")
+        if not my_file.is_file(): return {"error": "GROTE file not found, please process"}
+        params = get_json_content_w_name(directory_path + "/gaussian_shapes/peak_" + str(peak["id"])+ "/", "parameters")
+        if len(list(params.keys())) == 0: return {"error": "no parameter found, please process"}
+        if len(list(params.keys())) < 100 or (date_end - date_start).days < 100: return {"error": "there is too little data"}
+        found = False
+        for i in range(range_prediction):
+            new_data = date_end - datetime.timedelta(days=i + 1)
+            if new_data.strftime("%Y-%m-%d") in params: found = True
+        if not found: return {"error": "lack of data to forecast, please process"}
+        # getting the responce
+        res = main_alerter(product_type, location_name, date_start, date_end, data_range, peak["id"], 2, range_prediction)
+        responce[str(peak["id"])] = res
+
+    return responce
+
+
+
+
+
+
+
+
+
+
+
+
+date = datetime.datetime.now()
+date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=12, day=3, hour=0, minute=0, second=0, microsecond=0)
+default_weights = {}
 client_id = '982de4f4-dade-4f98-9b49-4374cd896bb6'
 client_secret = '%p/,0Yrd&/mO%cdudUsby[>@]MB|2<rf1<NnXkZr'
+for i in range(16):
+    default_weights[str(i)] = 1
+main_preparation(date_start, date_end, 1, 1, [1,1], "Sabetta Port", "NO2", default_weights, 30,
+                 client_id, client_secret)
 
-# Create a sessionv
-client = BackendApplicationClient(client_id=client_id)
-oauth = OAuth2Session(client=client)
 
-# Get token for the session
-token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/token',
-                          client_id=client_id, client_secret=client_secret)
 
-# All requests using this session will have an access token automatically added
-response = oauth.post('https://creodias.sentinel-hub.com/api/v1/process',
-                      json={
-                          "input": {
-                              "bounds": {
-                                  "bbox": [
-                                      13.822174072265625,
-                                      45.85080395917834,
-                                      14.55963134765625,
-                                      46.29191774991382
-                                  ]
-                              },
-                              "data": [{
-                                  "type": "sentinel-2-l2a"
-                              }]
-                          },
-                          "evalscript": """
-    //VERSION=3
 
-    function setup() {
-      return {
-        input: ["B02", "B03", "B04"],
-        output: {
-          bands: 3
-        }
-      };
-    }
 
-    function evaluatePixel(
-      sample,
-      scenes,
-      inputMetadata,
-      customData,
-      outputMetadata
-    ) {
-      return [2.5 * sample.B04, 2.5 * sample.B03, 2.5 * sample.B02];
-    }
-    """
-})
 
-print(response.content)
+
+
+
+
+
+
+
+
+
