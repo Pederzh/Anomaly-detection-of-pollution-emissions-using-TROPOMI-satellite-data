@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, send_file
-from flask_restful import Api, Resource, reqparse, request
+import flask.scaffold
+flask.helpers._endpoint_from_view_func = flask.scaffold._endpoint_from_view_func
+from flask_restful import Api, Resource, reqparse
 from main import main_preparation, main_forecasting
 import pickle
 import numpy as np
@@ -13,6 +15,9 @@ api = Api(app)
 # parser = reqparse.RequestParser()
 # parser.add_argument('data')  # propietà che verrà parsata dalla request
 
+class TropomiTest(Resource):
+    def get(self):
+        return "Working"
 
 # Define how the api will respond to the post requests
 class TropomiPreparation(Resource):
@@ -71,6 +76,7 @@ class TropomiPredictor(Resource):
 
 api.add_resource(TropomiPreparation, '/prepare')
 api.add_resource(TropomiPredictor, '/alerting')
+api.add_resource(TropomiTest, '/test')
 
 # {
 #     coordinates: {

@@ -2,6 +2,7 @@ import datetime
 import io
 
 import math
+import json
 from pathlib import Path
 
 import copy
@@ -41,7 +42,78 @@ def get_json_content_w_name(directory_path, name):
         data = json.load(json_file)
     return data
 
+def get_json_content_w_name_checking_exist(directory_path, name):
+    my_file = Path(directory_path + name + ".json")
+    if my_file.is_file():
+        with open(directory_path + name + ".json") as json_file:
+            data = json.load(json_file)
+        return data
+    else: return None
 
+def get_standard_rgba_values(value):
+    """
+    [minVal, [0, 0, 0.5]],
+    [minVal + 0.125 * diff, [0, 0, 1]],
+    [minVal + 0.375 * diff, [0, 1, 1]],
+    [minVal + 0.625 * diff, [1, 1, 0]],
+    [minVal + 0.875 * diff, [1, 0, 0]],
+    [maxVal, [0.5, 0, 0]]
+    """
+    rgb = [0, 0, 0, 255]
+    if (value == -1): return [0, 0, 0, 0]
+    precision = 1016  # given by the rgb composition
+    prop = value / precision
+    # [0, 0, 1]
+    if prop <= 0.125:
+        min = 0
+        max = 0.125
+        rangeVal = max - min
+        new_value = round((prop - min) / rangeVal * 127)
+        rgb[2] = 128 + new_value
+        return rgb
+    # [0, 1, 1]
+    if prop <= 0.375:
+        min = 0.125
+        max = 0.375
+        rangeVal = max - min
+        new_value = round((prop - min)/rangeVal * 255)
+        rgb[1] = new_value
+        rgb[2] = 255
+        return rgb
+    # [1, 1, 0]
+    if prop <= 0.625:
+        min = 0.375
+        max = 0.625
+        rangeVal = max - min
+        new_value = round((prop - min)/rangeVal * 255)
+        rgb[0] = new_value
+        rgb[1] = 255
+        rgb[2] = 255 - new_value
+        return rgb
+    # [1, 0, 0]
+    if prop <= 0.875:
+        min = 0.625
+        max = 0.875
+        rangeVal = max - min
+        new_value = round((prop - min) / rangeVal * 255)
+        rgb[0] = 255
+        rgb[1] = 255 - new_value
+        return rgb
+    # [0.5, 0, 0]
+    min = 0.875
+    max = 1
+    rangeVal = max - min
+    new_value = round(127 - (prop - min) / rangeVal * 127)
+    rgb[0] = 128 + new_value
+    return rgb
+
+def create_image_from_matrix(data):
+    image = []
+    for y in range(len(data)):
+        image.append([])
+        for x in range(len(data)):
+            image[y].append(get_standard_rgba_values(data[y][x]))
+    return image
 
 
 
@@ -134,6 +206,10 @@ def get_parameters(data_set):
         })
     return params_list
 
+def get_image_png(rgbt_matrix):
+    array = np.array(rgbt_matrix, dtype=np.uint8)
+    image = Image.fromarray(array)
+    return image
 
 
 def get_parameters_mean(data_set, day_range, type):
@@ -315,7 +391,7 @@ def get_mean_from_RMSE(pred, act, max_error_position):
 
 def main_alerter(product_type, location_name, date_start, date_end, data_range, peak_id, parameter, day_range_prediction):
 
-    directory_path = "./Data/" + product_type + "/" + location_name + "/range_data/"
+    directory_path = "../Data/" + product_type + "/" + location_name + "/range_data/"
     directory_path = directory_path + str(data_range) + "/peaks/"
     peaks = get_json_content_w_name(directory_path, "peaks")
     if peaks == None: return {"error": "peaks file not found, please reprocess"}
@@ -326,9 +402,9 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
             image_ccs = peak["point"]
     if image_ccs == None: return None
 
-    map_ccs = get_json_content_w_name("./Data/" + product_type + "/" + location_name + "/", "coordinates")
+    map_ccs = get_json_content_w_name("../Data/" + product_type + "/" + location_name + "/", "coordinates")
 
-    directory_path = "./Data/" + product_type + "/" + location_name +  "/range_data/"
+    directory_path = "../Data/" + product_type + "/" + location_name +  "/range_data/"
     directory_path = directory_path + str(data_range) + "/gaussian_shapes/peak_" + str(peak_id) + "/"
     data_set = get_json_content_w_name(directory_path , "parameters")
 
@@ -361,7 +437,36 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     rmse = get_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
     new_pred = get_mean_from_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
 
+    # GETTING ACTUAL IMAGE
+    directory_path = "../Data/" + product_type + "/" + location_name + "/images/"
+    print(max_error_position)
+    def get_images_mean(from_path):
+        imgs_list = []
+        for i in range(day_range_prediction):
+            date_act = date_end - datetime.timedelta(days=(day_range_prediction - i))
+            date_act_str = date_act.strftime("%Y-%m-%d")
+            date_act_str = date_act_str.split("-")
+            img_act = get_json_content_w_name_checking_exist(
+                directory_path + date_act_str[0] + "/" + date_act_str[1] + "/" + date_act_str[2] + "/" + from_path + "/", "mean")
+            imgs_list.append(img_act)
+        img_mean = []
+        for y in range(100):
+            img_mean.append([])
+            for x in range(100):
+                img_mean[y].append(0)
+                tot = 0
+                for i in range(len(imgs_list)):
+                    if i != max_error_position and imgs_list[i] != None:
+                        tot += 1
+                        img_mean[y][x] += imgs_list[i][y][x]
+                img_mean[y][x] = img_mean[y][x] / tot
+        img_mean = create_image_from_matrix(img_mean)
+        return img_mean
 
+    original_im = get_images_mean("filled")
+    processed_im = get_images_mean("lowed")
+
+    # SETTING THE RESPONCE
     flag = "GREEN"
     if rmse > max_difference:
         if rmse > max_difference * 2:
@@ -380,17 +485,33 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     ]
     final_ccs = get_bbox_coordinates_from_center(map_ccs["coordinates"], distance)
 
+    GROTE_img_forecst = []
+    GROTE_img_act = []
+    for y in range(100):
+        GROTE_img_act.append([])
+        GROTE_img_forecst.append([])
+        for x in range(100):
+            GROTE_img_forecst[y].append(0)
+            GROTE_img_act[y].append(0)
+    GROTE_img_forecst = create_gaussian_image(GROTE_img_forecst, pred_parameters[2], image_ccs)
+    GROTE_img_act = create_gaussian_image(GROTE_img_act, actl_parameters[2], image_ccs)
+    GROTE_img_forecst = create_image_from_matrix(GROTE_img_forecst)
+    GROTE_img_act = create_image_from_matrix(GROTE_img_act)
     responce = {
         "status": flag,
         "forecasted_value": {
             "peak": pred_parameters[0],
             "attenuation": pred_parameters[1],
-            "volume": pred_parameters[2]
+            "volume": pred_parameters[2],
+            "GROTE_image": GROTE_img_forecst,
         },
         "actual_value": {
             "peak": actl_parameters[0],
             "attenuation": actl_parameters[1],
-            "volume": actl_parameters[2]
+            "volume": actl_parameters[2],
+            "GROTE_image": GROTE_img_act,
+            "original_image": original_im,
+            "processed_image": processed_im,
         },
         "other_information": {
             "coordinates": final_ccs,

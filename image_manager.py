@@ -3,6 +3,7 @@ import io
 import json
 import math
 import statistics as stst
+import numpy
 
 import matplotlib.pyplot as plt
 
@@ -240,7 +241,7 @@ print("from file: " + directory_path + file_name)
 
 
 directory_path = "../Data/NO2/Sabetta Port/images/2021/03/14/filled/"
-directory_path = "../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_3/"
+directory_path = "../Data/NO2/Sabetta Port/range_data/30/gaussian_shapes/peak_2/"
 file_name = "data"
 data_set = get_json_content_w_name(directory_path, file_name)["2021-03-14"]
 #data_set = get_lowed_image(data_set, 10)
@@ -262,9 +263,10 @@ for y in range(len(data_set)):
     rgba_data_set.append([])
     for x in data_set[y]:
         rgba_data_set[y].append(get_standard_rgb_values(x))
-directory_write = "../Thesis images/10/"
-file_write = "gaussian_reconstruction_2021_03_14_peak_3"
-save_image(directory_write, file_write, rgba_data_set)
+directory_write = "../steps/"
+file_write = "tmp"
+
+#save_image(directory_write, file_write, rgba_data_set)
 
 """directory_path = "../Data/NO2/Sabetta Port/range_data/30/"
 file_name = "data"
@@ -334,3 +336,7 @@ dst_ds.GetRasterBand(3).WriteArray(b_pixels)   # write b-band to the raster
 dst_ds.GetRasterBand(4).WriteArray(a_pixels)   # write b-band to the raster
 dst_ds.FlushCache()                     # write to disk
 dst_ds = None
+
+im = Image.open('../steps/tmp.tif')
+im.show()
+imarray = numpy.array(im)
