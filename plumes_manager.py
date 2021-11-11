@@ -929,7 +929,10 @@ def get_gaussian_parameters(data_set, plumes, plume_id):
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     #A = pow(volume, 2/3) / pow(math.pi, 1/3)
     A = pow(volume, 2/3) / pow(math.pi, 2/3)
-    B = 1/(pow(A, 1/2))
+    if A == 0:
+        B = 1
+    else:
+        B = 1 / (pow(A, 1 / 2))
     #print(volume)
     return [A, B, volume]
 

@@ -130,7 +130,10 @@ def gauss_value(parameters, point):
 
 def get_gaussian_parameters(volume):
     A = pow(volume, 2 / 3) / pow(math.pi, 2 / 3)
-    B = 1 / (pow(A, 1 / 2))
+    if A == 0:
+        B = 1
+    else:
+        B = 1 / (pow(A, 1 / 2))
     return [A, B, volume]
 
 def create_gaussian_image_w_parameters(image, parameters, point):
@@ -503,15 +506,15 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
             "peak": pred_parameters[0],
             "attenuation": pred_parameters[1],
             "volume": pred_parameters[2],
-            "GROTE_image": GROTE_img_forecst,
+            #"GROTE_image": GROTE_img_forecst,
         },
         "actual_value": {
             "peak": actl_parameters[0],
             "attenuation": actl_parameters[1],
             "volume": actl_parameters[2],
-            "GROTE_image": GROTE_img_act,
-            "original_image": original_im,
-            "processed_image": processed_im,
+            #"GROTE_image": GROTE_img_act,
+            #"original_image": original_im,
+            #"processed_image": processed_im,
         },
         "other_information": {
             "coordinates": final_ccs,
