@@ -3,7 +3,7 @@ import flask.scaffold
 
 flask.helpers._endpoint_from_view_func = flask.scaffold._endpoint_from_view_func
 from flask_restful import Api, Resource, reqparse
-from main import main_preparation, main_forecasting
+from main import main_preparation, main_processed_image, main_alerting
 import datetime
 from threading import Thread
 
@@ -36,6 +36,15 @@ tropomiAlertingParser.add_argument('product_type', default='NO2', choices=('NO2'
 tropomiAlertingParser.add_argument('peaks_sensing_period', type=int, default=30)
 tropomiAlertingParser.add_argument('range_alerting', type=int, default=10)
 
+tropomiProcessedImageParser = reqparse.RequestParser()
+tropomiProcessedImageParser.add_argument('lat', type=float, required=True, help="Parameter 'lat' cannot be blank")
+tropomiProcessedImageParser.add_argument('lng', type=float, required=True, help="Parameter 'lng' cannot be blank")
+tropomiProcessedImageParser.add_argument('date', required=True, help="Parameter 'date' cannot be blank")
+tropomiProcessedImageParser.add_argument('range_daily_images', type=int, default=10)
+tropomiProcessedImageParser.add_argument('product_type', default='NO2', choices=('NO2', 'CH4', 'CO'),
+                                         help="Please provide a valid value between: 'NO2', 'CH4', 'CO'")
+tropomiProcessedImageParser.add_argument('peaks_sensing_period', type=int, default=30)
+
 
 # Define how the api will respond to the post requests
 class TropomiPreparation(Resource):
@@ -66,10 +75,10 @@ class TropomiPreparation(Resource):
 
         main_preparation_tread = Thread(target=main_preparation,
                                         args=(
-                                        date_start, date, args["sensing_start_hours"], args["sensing_range_hours"],
-                                        coordinates, location_name,
-                                        args["product_type"], default_weights, args["peaks_sensing_period"],
-                                        args["sentinel_hub_client_id"], args["sentinel_hub_client_secret"]))
+                                            date_start, date, args["sensing_start_hours"], args["sensing_range_hours"],
+                                            coordinates, location_name,
+                                            args["product_type"], default_weights, args["peaks_sensing_period"],
+                                            args["sentinel_hub_client_id"], args["sentinel_hub_client_secret"]))
 
         main_preparation_tread.start()
 
@@ -82,7 +91,7 @@ class TropomiPreparation(Resource):
         return jsonify(content)
 
 
-class TropomiPredictor(Resource):
+class TropomiAlerting(Resource):
     def post(self):
         args = tropomiAlertingParser.parse_args()
 
@@ -102,39 +111,51 @@ class TropomiPredictor(Resource):
         location_name = "[" + str(coordinates[0]) + "_" + str(coordinates[1]) + "]"  # DEFAULT
         # -------
 
-        result = main_forecasting(args["product_type"], location_name, date_start, date,
-                                  args["peaks_sensing_period"], args["range_alerting"])
+        result = main_alerting(args["product_type"], location_name, date_start, date,
+                               args["peaks_sensing_period"], args["range_alerting"])
 
         # serialize it again so that they will be returned back to the application in a proper format.
         return jsonify(result)
 
 
-api.add_resource(TropomiPreparation, '/prepare')
-api.add_resource(TropomiPredictor, '/alerting')
+class TropomiProcessedImage(Resource):
+    def post(self):
+        args = tropomiProcessedImageParser.parse_args()
 
-# {
-#     coordinates: {
-#         lat:
-#         lng:
-#     },
-#     value_actual: {
-#         volume: (final val)
-#         peak: (a)
-#         attenuation: (b)
-#     },
-#     value_expected: {
-#         volume: (final val)
-#         peak: (a)
-#         attenuation: (b)
-#     },
-#     status: //green, yellow, orange, red
-#
-# }
+        # --- Compute dates ---
+        try:
+            date = datetime.datetime.fromisoformat(args["date"])
+        except ValueError:
+            return 'Invalid date format', 400
+
+        d = datetime.datetime.now()
+        print(args)
+        date_start = date - datetime.timedelta(days=args["range_daily_images"])
+        if date_start.year < 2021:
+            date_start = d.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # --- Compute location ---
+        coordinates = [args["lat"], args["lng"]]
+        location_name = "[" + str(coordinates[0]) + "_" + str(coordinates[1]) + "]"  # DEFAULT
+        # -------
+
+        result_image = main_processed_image(args["product_type"], location_name, date_start, date,
+                                            args["peaks_sensing_period"])
+
+        if result_image is None:
+            return 'Image not found, try to call the following API: /prepare. ' \
+                   'If the problem persists is because TROPOMI has not collected any image for the period', 400
+
+        return send_file(result_image, mimetype='image/PNG')
+
+
+api.add_resource(TropomiPreparation, '/prepare')
+api.add_resource(TropomiAlerting, '/alerting')
+api.add_resource(TropomiProcessedImage, '/processedImage')
+
 
 if __name__ == '__main__':
     # Load model
     print("start")
-    # with open('model.pickle', 'rb') as f:
-    #    model = pickle.load(f)
 
     app.run(debug=True)
