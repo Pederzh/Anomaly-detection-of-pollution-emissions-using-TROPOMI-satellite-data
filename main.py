@@ -237,7 +237,7 @@ def main_alerting(product_type, location_name, date_start, date_end, data_range,
     return responce
 
 def main_processed_image(product_type, location_name, date_start, date_end, peaks_sensing_period):
-    dir_path = "../Data/" + product_type + "/" + location_name + "/range_data/" + str(peaks_sensing_period) + "/"
+    dir_path = "./Data/" + product_type + "/" + location_name + "/range_data/" + str(peaks_sensing_period) + "/"
     my_file = Path(dir_path + "peaks/peaks.json")
     if not my_file.is_file(): return None
     peaks = get_json_content_w_name(dir_path + "peaks" + "/", "peaks")
