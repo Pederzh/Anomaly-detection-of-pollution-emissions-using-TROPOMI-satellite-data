@@ -284,9 +284,3 @@ def main_processed_image(product_type, location_name, date_start, date_end, peak
     file_object.seek(0)
     return file_object
 
-
-date = datetime.datetime.now()
-date_start = date.replace(year=2021, month=5, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=5, day=10, hour=0, minute=0, second=0, microsecond=0)
-data_range = 30
-main_processed_image("NO2","Sabetta Port",date_start,date_end, data_range)
