@@ -8,13 +8,12 @@ import math
 import matplotlib.pyplot as plt
 from PIL import Image
 import io
-
+import numpy as np
 from data_downloader_hours import main_downloader
 from data_manager import main_processer
 from peaks_manager import main_peak_finder
 from plumes_manager import main_reconstructor
 from alerting_manager import main_alerter
-
 
 
 def gauss_value(parameters, point):
@@ -24,11 +23,15 @@ def gauss_value(parameters, point):
     x = point[1]
     return (A * pow(math.e, -B * (pow(x, 2) + pow(y, 2))))
 
+
 def get_gaussian_parameters(volume):
     A = pow(volume, 2 / 3) / pow(math.pi, 2 / 3)
-    if A == 0: B = 1
-    else: B = 1 / (pow(A, 1 / 2))
+    if A == 0:
+        B = 1
+    else:
+        B = 1 / (pow(A, 1 / 2))
     return [A, B, volume]
+
 
 def create_gaussian_image_w_parameters(image, parameters, point):
     gaussian_image = []
@@ -42,9 +45,11 @@ def create_gaussian_image_w_parameters(image, parameters, point):
             gaussian_image[y].append(round(gauss_value(parameters, gauss_point)))
     return gaussian_image
 
+
 def create_gaussian_image(image, volume, point):
     parameters = get_gaussian_parameters(volume)
     return create_gaussian_image_w_parameters(image, parameters, point)
+
 
 def get_standard_rgba_values(value):
     """
@@ -72,7 +77,7 @@ def get_standard_rgba_values(value):
         min = 0.125
         max = 0.375
         rangeVal = max - min
-        new_value = round((prop - min)/rangeVal * 255)
+        new_value = round((prop - min) / rangeVal * 255)
         rgb[1] = new_value
         rgb[2] = 255
         return rgb
@@ -81,7 +86,7 @@ def get_standard_rgba_values(value):
         min = 0.375
         max = 0.625
         rangeVal = max - min
-        new_value = round((prop - min)/rangeVal * 255)
+        new_value = round((prop - min) / rangeVal * 255)
         rgb[0] = new_value
         rgb[1] = 255
         rgb[2] = 255 - new_value
@@ -103,6 +108,7 @@ def get_standard_rgba_values(value):
     rgb[0] = 128 + new_value
     return rgb
 
+
 def create_image_from_matrix(data):
     image = []
     for y in range(len(data)):
@@ -111,15 +117,18 @@ def create_image_from_matrix(data):
             image[y].append(get_standard_rgba_values(data[y][x]))
     return image
 
+
 def print_image_given_matrix(matrix):
     image = create_image_from_matrix(matrix)
     plt.imshow(image)
     plt.show()
 
+
 def get_json_content_w_name(directory_path, name):
     with open(directory_path + name + ".json") as json_file:
         data = json.load(json_file)
     return data
+
 
 def get_ranges_to_download(date_start, date_end, location_name, product_type):
     date_ranges = []
@@ -146,6 +155,7 @@ def get_ranges_to_download(date_start, date_end, location_name, product_type):
         date_ranges.append(date_range)
     return date_ranges
 
+
 def get_ranges_to_process(date_start, date_end, location_name, product_type):
     date_ranges = []
     date_range = {}
@@ -171,9 +181,9 @@ def get_ranges_to_process(date_start, date_end, location_name, product_type):
         date_ranges.append(date_range)
     return date_ranges
 
+
 def main_preparation(date_start, date_end, start_h, range_h, coordinates, location_name, product_type, range_wieghts,
                      range_for_mean, cliend_id, client_secret):
-
     # DOWNLOADING IMAGES
     ranges_to_download = get_ranges_to_download(date_start, date_end, location_name, product_type)
     for to_download in ranges_to_download:
@@ -191,10 +201,7 @@ def main_preparation(date_start, date_end, start_h, range_h, coordinates, locati
         main_reconstructor(product_type, location_name, date_start, date_end, range_for_mean)
 
 
-
-
 def main_alerting(product_type, location_name, date_start, date_end, data_range, range_prediction):
-
     directory_path = "./Data/" + product_type + "/" + location_name + "/range_data/"
     directory_path = directory_path + str(data_range)
 
@@ -204,37 +211,29 @@ def main_alerting(product_type, location_name, date_start, date_end, data_range,
     peaks = get_json_content_w_name(directory_path + "/peaks/", "peaks")
     if len(peaks) == 0: return {"error": "no peaks found"}
 
-    responce = {}
+    response = {}
     for peak in peaks:
 
         # checking GROTE file
-        my_file = Path(directory_path + "/gaussian_shapes/peak_" + str(peak["id"])+ "/parameters.json")
+        my_file = Path(directory_path + "/gaussian_shapes/peak_" + str(peak["id"]) + "/parameters.json")
         if not my_file.is_file(): return {"error": "GROTE file not found, please process"}
-        params = get_json_content_w_name(directory_path + "/gaussian_shapes/peak_" + str(peak["id"])+ "/", "parameters")
+        params = get_json_content_w_name(directory_path + "/gaussian_shapes/peak_" + str(peak["id"]) + "/",
+                                         "parameters")
         if len(list(params.keys())) == 0: return {"error": "no parameter found, please process"}
-        if len(list(params.keys())) < 100 or (date_end - date_start).days < 100: return {"error": "there is too little data"}
+        if len(list(params.keys())) < 100 or (date_end - date_start).days < 100: return {
+            "error": "there is too little data"}
         found = False
         for i in range(range_prediction):
             new_data = date_end - datetime.timedelta(days=i + 1)
             if new_data.strftime("%Y-%m-%d") in params: found = True
         if not found: return {"error": "lack of data to forecast, please process"}
-        # getting the responce
-        res = main_alerter(product_type, location_name, date_start, date_end, data_range, peak["id"], 2, range_prediction)
-        responce[str(peak["id"])] = res
+        # getting the response
+        res = main_alerter(product_type, location_name, date_start, date_end, data_range, peak["id"], 2,
+                           range_prediction)
+        response[str(peak["id"])] = res
 
-    responce_img = []
-    for y in range(100):
-        responce_img.append([])
-        for x in range(100):
-            responce_img[y].append(0)
+    return response
 
-    for peak in peaks:
-        img = responce[str(peak["id"])]["forecasted_value"]["GROTE_image"]
-        for y in range(100):
-            for x in range(100):
-                responce_img[y][x] += responce
-
-    return responce
 
 def main_processed_image(product_type, location_name, date_start, date_end, peaks_sensing_period):
     dir_path = "./Data/" + product_type + "/" + location_name + "/range_data/" + str(peaks_sensing_period) + "/"
@@ -271,11 +270,16 @@ def main_processed_image(product_type, location_name, date_start, date_end, peak
                 for y in range(100):
                     for x in range(100):
                         mean_img[y][x] += gaus_image[y][x]
-        if tot == 0: return None
+        if tot == 0:
+            return None
         for y in range(100):
             for x in range(100):
                 final_img[y][x] += mean_img[y][x] / tot
-    image = Image.fromarray(final_img)
+    final_img = create_image_from_matrix(final_img)
+    # my numpy array
+    arr = np.array(final_img)
+    # convert numpy array to PIL Image
+    image = Image.fromarray(arr.astype('uint8'))
     # create file-object in memory
     file_object = io.BytesIO()
     # write PNG in file-object
@@ -283,4 +287,3 @@ def main_processed_image(product_type, location_name, date_start, date_end, peak
     # move to beginning of file so send_file() it will read from start
     file_object.seek(0)
     return file_object
-

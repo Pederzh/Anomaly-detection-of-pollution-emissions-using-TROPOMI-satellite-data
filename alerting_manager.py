@@ -469,7 +469,7 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     original_im = get_images_mean("filled")
     processed_im = get_images_mean("lowed")
 
-    # SETTING THE RESPONCE
+    # SETTING THE RESPONSE
     flag = "GREEN"
     if rmse > max_difference:
         if rmse > max_difference * 2:
@@ -500,7 +500,7 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     GROTE_img_act = create_gaussian_image(GROTE_img_act, actl_parameters[2], image_ccs)
     GROTE_img_forecst = create_image_from_matrix(GROTE_img_forecst)
     GROTE_img_act = create_image_from_matrix(GROTE_img_act)
-    responce = {
+    response = {
         "status": flag,
         "forecasted_value": {
             "peak": pred_parameters[0],
@@ -522,7 +522,7 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
             "date": date_end,
         }
     }
-    return responce
+    return response
 
 
 

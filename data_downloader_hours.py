@@ -294,7 +294,7 @@ def main_downloader(date_start, date_end, start_h, range_h, coordinates, locatio
             date_from_str = [date_from_h.strftime("%Y-%m-%d"), date_from_h.strftime("%H:%M:%S")]
             date_to_str = [date_to_h.strftime("%Y-%m-%d"), date_to_h.strftime("%H:%M:%S")]
             print(date_from_str)
-            # getting post responce
+            # getting post response
             response = get_response(bbox_coordinates, date_from_str, date_to_str, product_type, dimension)
             in_memory_file = io.BytesIO(response.content)
             img_png = Image.open(in_memory_file)
