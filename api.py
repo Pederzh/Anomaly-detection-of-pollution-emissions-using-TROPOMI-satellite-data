@@ -5,6 +5,7 @@ flask.helpers._endpoint_from_view_func = flask.scaffold._endpoint_from_view_func
 from flask_restful import Api, Resource, reqparse
 from main import main_preparation, main_forecasting
 import datetime
+from threading import Thread
 
 app = Flask(__name__)
 api = Api(app)
@@ -63,11 +64,14 @@ class TropomiPreparation(Resource):
             default_weights[str(i)] = 1
         # -------
 
+        main_preparation_tread = Thread(target=main_preparation,
+                                        args=(
+                                        date_start, date, args["sensing_start_hours"], args["sensing_range_hours"],
+                                        coordinates, location_name,
+                                        args["product_type"], default_weights, args["peaks_sensing_period"],
+                                        args["sentinel_hub_client_id"], args["sentinel_hub_client_secret"]))
 
-        main_preparation(date_start, date, args["sensing_start_hours"], args["sensing_range_hours"],
-                         coordinates, location_name,
-                         args["product_type"], default_weights, args["peaks_sensing_period"],
-                         args["sentinel_hub_client_id"], args["sentinel_hub_client_secret"])
+        main_preparation_tread.start()
 
         content = {
             "message": "Preparation started, try calling /alerting to check if the system is ready for alerting",
