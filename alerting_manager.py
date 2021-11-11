@@ -402,9 +402,9 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
             image_ccs = peak["point"]
     if image_ccs == None: return None
 
-    map_ccs = get_json_content_w_name("../Data/" + product_type + "/" + location_name + "/", "coordinates")
+    map_ccs = get_json_content_w_name("./Data/" + product_type + "/" + location_name + "/", "coordinates")
 
-    directory_path = "../Data/" + product_type + "/" + location_name +  "/range_data/"
+    directory_path = "./Data/" + product_type + "/" + location_name +  "/range_data/"
     directory_path = directory_path + str(data_range) + "/gaussian_shapes/peak_" + str(peak_id) + "/"
     data_set = get_json_content_w_name(directory_path , "parameters")
 
@@ -438,7 +438,7 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     new_pred = get_mean_from_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
 
     # GETTING ACTUAL IMAGE
-    directory_path = "../Data/" + product_type + "/" + location_name + "/images/"
+    directory_path = "./Data/" + product_type + "/" + location_name + "/images/"
     print(max_error_position)
     def get_images_mean(from_path):
         imgs_list = []
