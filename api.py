@@ -4,94 +4,109 @@ import flask.scaffold
 flask.helpers._endpoint_from_view_func = flask.scaffold._endpoint_from_view_func
 from flask_restful import Api, Resource, reqparse
 from main import main_preparation, main_forecasting
-import pickle
-import numpy as np
-import json
 import datetime
 
 app = Flask(__name__)
 api = Api(app)
 
-
 # Create parser for the payload data
-# parser = reqparse.RequestParser()
-# parser.add_argument('data')  # propietà che verrà parsata dalla request
+tropomiPreparationParser = reqparse.RequestParser()
+tropomiPreparationParser.add_argument('lat', type=float, required=True, help="Parameter 'lat' cannot be blank")
+tropomiPreparationParser.add_argument('lng', type=float, required=True, help="Parameter 'lng' cannot be blank")
+tropomiPreparationParser.add_argument('date', required=True, help="Parameter 'date' cannot be blank")
+tropomiPreparationParser.add_argument('sensing_period', type=int, default=375)
+tropomiPreparationParser.add_argument('product_type', default='NO2', choices=('NO2', 'CH4', 'CO'),
+                                      help="Please provide a valid value between: 'NO2', 'CH4', 'CO'")
+tropomiPreparationParser.add_argument('sentinel_hub_client_id', required=True,
+                                      help="Parameter 'sentinel_hub_client_id' cannot be blank, get OAuth keys from Sentinel Hub")
+tropomiPreparationParser.add_argument('sentinel_hub_client_secret', required=True,
+                                      help="Parameter 'sentinel_hub_client_secret' cannot be blank, get OAuth keys from Sentinel Hub")
+tropomiPreparationParser.add_argument('peaks_sensing_period', type=int, default=30)
+tropomiPreparationParser.add_argument('sensing_start_hours', type=int, default=0)
+tropomiPreparationParser.add_argument('sensing_range_hours', type=int, default=24)
 
-class TropomiTest(Resource):
-    def get(self):
-        return "Working"
+tropomiAlertingParser = reqparse.RequestParser()
+tropomiAlertingParser.add_argument('lat', type=float, required=True, help="Parameter 'lat' cannot be blank")
+tropomiAlertingParser.add_argument('lng', type=float, required=True, help="Parameter 'lng' cannot be blank")
+tropomiAlertingParser.add_argument('date', required=True, help="Parameter 'date' cannot be blank")
+tropomiAlertingParser.add_argument('sensing_period', type=int, default=375)
+tropomiAlertingParser.add_argument('product_type', default='NO2', choices=('NO2', 'CH4', 'CO'),
+                                   help="Please provide a valid value between: 'NO2', 'CH4', 'CO'")
+tropomiAlertingParser.add_argument('peaks_sensing_period', type=int, default=30)
+tropomiAlertingParser.add_argument('range_alerting', type=int, default=10)
 
 
 # Define how the api will respond to the post requests
 class TropomiPreparation(Resource):
     def post(self):
-        # TODO check body of the request
 
-        # Default values
-        datepkg = datetime.datetime.now()
-        date = datepkg.replace(year=2021, month=12, day=3, hour=0, minute=0, second=0,
-                               microsecond=0)  # REQ #DEFAULT: today
-        sensing_period = 365 + 10  # DEFAULT
-        date_start = date - datetime.timedelta(days=sensing_period)
+        args = tropomiPreparationParser.parse_args()
+        print(args)
+
+        # --- Compute dates ---
+        try:
+            date = datetime.datetime.fromisoformat(args["date"])
+        except ValueError:
+            return 'Invalid date format', 400
+
+        d = datetime.datetime.now()
+        date_start = date - datetime.timedelta(days=args["sensing_period"])
         if date_start.year < 2021:
-            date_start = datepkg.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)  # CALCULATED
-        peaks_sensing_period = 30  # DEFAULT
-        sensing_start_hours = 0  # DEFAULT
-        sensing_range_hours = 24  # DEFAULT
-        coordinates = [71.264765, 72.060155]  # REQ #DEFAULT: sabetta
+            date_start = d.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # --- Compute location ---
+        coordinates = [args["lat"], args["lng"]]
         location_name = "[" + str(coordinates[0]) + "_" + str(coordinates[1]) + "]"  # DEFAULT
-        product_type = "NO2"  # DEFAULT (accepted: NO2, CH4, CO)
-        client_id = '982de4f4-dade-4f98-9b49-4374cd896bb6'  # REQ
-        client_secret = '%p/,0Yrd&/mO%cdudUsby[>@]MB|2<rf1<NnXkZr'  # REQ
+
         default_weights = {}
         for i in range(16):
             default_weights[str(i)] = 1
         # -------
 
-        main_preparation(date_start, date, sensing_start_hours, sensing_range_hours, coordinates, location_name,
-                         product_type, default_weights, peaks_sensing_period,
-                         client_id, client_secret)
+
+        main_preparation(date_start, date, args["sensing_start_hours"], args["sensing_range_hours"],
+                         coordinates, location_name,
+                         args["product_type"], default_weights, args["peaks_sensing_period"],
+                         args["sentinel_hub_client_id"], args["sentinel_hub_client_secret"])
 
         content = {
             "message": "Preparation started, try calling /alerting to check if the system is ready for alerting",
             "status": 200,
         }
 
-        return jsonify(
-            content)  # serialize it again so that they will be returned back to the application in a proper format.
+        # serialize it again so that they will be returned back to the application in a proper format.
+        return jsonify(content)
 
 
 class TropomiPredictor(Resource):
     def post(self):
-        content = request.get_json()
+        args = tropomiAlertingParser.parse_args()
 
-        # TODO check body of the request
+        # --- Compute dates ---
+        try:
+            date = datetime.datetime.fromisoformat(args["date"])
+        except ValueError:
+            return 'Invalid date format', 400
 
-        # Default values
-        datepkg = datetime.datetime.now()
-        date = datepkg.replace(year=2021, month=12, day=3, hour=0, minute=0, second=0,
-                               microsecond=0)  # REQ #DEFAULT: today
-        sensing_period = 365 + 10  # DEFAULT
-        date_start = date - datetime.timedelta(days=sensing_period)
+        d = datetime.datetime.now()
+        date_start = date - datetime.timedelta(days=args["sensing_period"])
         if date_start.year < 2021:
-            date_start = datepkg.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)  # CALCULATED
+            date_start = d.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        peaks_sensing_period = 30  # DEFAULT
-        range_alerting = 10
-        coordinates = [71.264765, 72.060155]  # REQ #DEFAULT: sabetta
+        # --- Compute location ---
+        coordinates = [args["lat"], args["lng"]]
         location_name = "[" + str(coordinates[0]) + "_" + str(coordinates[1]) + "]"  # DEFAULT
-        product_type = "NO2"  # DEFAULT (accepted: NO2, CH4, CO)
         # -------
 
-        result = main_forecasting(product_type, location_name, date_start, date, peaks_sensing_period, range_alerting)
+        result = main_forecasting(args["product_type"], location_name, date_start, date,
+                                  args["peaks_sensing_period"], args["range_alerting"])
 
-        return jsonify(
-            result)  # serialize it again so that they will be returned back to the application in a proper format.
+        # serialize it again so that they will be returned back to the application in a proper format.
+        return jsonify(result)
 
 
 api.add_resource(TropomiPreparation, '/prepare')
 api.add_resource(TropomiPredictor, '/alerting')
-api.add_resource(TropomiTest, '/test')
 
 # {
 #     coordinates: {
