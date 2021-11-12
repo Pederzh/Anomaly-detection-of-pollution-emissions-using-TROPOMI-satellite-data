@@ -440,46 +440,6 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     rmse = get_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
     new_pred = get_mean_from_RMSE(pred["prediction"], pred["actual_value"], max_error_position)
 
-    # GETTING ACTUAL IMAGE
-    directory_path = "./Data/" + product_type + "/" + location_name + "/images/"
-    print(max_error_position)
-    def get_images_mean(from_path):
-        imgs_list = []
-        for i in range(day_range_prediction):
-            date_act = date_end - datetime.timedelta(days=(day_range_prediction - i))
-            date_act_str = date_act.strftime("%Y-%m-%d")
-            date_act_str = date_act_str.split("-")
-            img_act = get_json_content_w_name_checking_exist(
-                directory_path + date_act_str[0] + "/" + date_act_str[1] + "/" + date_act_str[2] + "/" + from_path + "/", "mean")
-            imgs_list.append(img_act)
-        img_mean = []
-        for y in range(100):
-            img_mean.append([])
-            for x in range(100):
-                img_mean[y].append(0)
-                tot = 0
-                for i in range(len(imgs_list)):
-                    if i != max_error_position and imgs_list[i] != None:
-                        tot += 1
-                        img_mean[y][x] += imgs_list[i][y][x]
-                img_mean[y][x] = img_mean[y][x] / tot
-        img_mean = create_image_from_matrix(img_mean)
-        return img_mean
-
-    original_im = get_images_mean("filled")
-    processed_im = get_images_mean("lowed")
-
-    # SETTING THE RESPONSE
-    flag = "GREEN"
-    if rmse > max_difference:
-        if rmse > max_difference * 2:
-            flag = "RED"
-        else:
-            flag = "ORANGE"
-    else:
-        if rmse > max_difference / 2:
-            flag = "YELLOW"
-
     pred_parameters = get_gaussian_parameters(new_pred[0])
     actl_parameters = get_gaussian_parameters(new_pred[1])
     distance = [
@@ -488,18 +448,18 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
     ]
     final_ccs = get_bbox_coordinates_from_center(map_ccs["coordinates"], distance)
 
-    GROTE_img_forecst = []
-    GROTE_img_act = []
-    for y in range(100):
-        GROTE_img_act.append([])
-        GROTE_img_forecst.append([])
-        for x in range(100):
-            GROTE_img_forecst[y].append(0)
-            GROTE_img_act[y].append(0)
-    GROTE_img_forecst = create_gaussian_image(GROTE_img_forecst, pred_parameters[2], image_ccs)
-    GROTE_img_act = create_gaussian_image(GROTE_img_act, actl_parameters[2], image_ccs)
-    GROTE_img_forecst = create_image_from_matrix(GROTE_img_forecst)
-    GROTE_img_act = create_image_from_matrix(GROTE_img_act)
+    # SETTING THE RESPONSE
+    rmse_final = abs(pred_parameters[2] - actl_parameters[2])
+    flag = "GREEN"
+    if rmse_final > max_difference:
+        if rmse_final > max_difference * 2:
+            flag = "RED"
+        else:
+            flag = "ORANGE"
+    else:
+        if rmse_final > max_difference / 2:
+            flag = "YELLOW"
+
     response = {
         "status": flag,
         "forecasted_value": {
