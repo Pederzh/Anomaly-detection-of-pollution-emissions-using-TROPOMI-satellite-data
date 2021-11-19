@@ -60,6 +60,7 @@ class TropomiPreparation(Resource):
             return 'Invalid date format', 400
 
         d = datetime.datetime.now()
+        date = date + datetime.timedelta(days=1)
         date_start = date - datetime.timedelta(days=args["sensing_period"])
         if date_start.year < 2021:
             date_start = d.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -102,6 +103,7 @@ class TropomiAlerting(Resource):
             return 'Invalid date format', 400
 
         d = datetime.datetime.now()
+        date = date + datetime.timedelta(days=1)
         date_start = date - datetime.timedelta(days=args["sensing_period"])
         if date_start.year < 2021:
             date_start = d.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -129,7 +131,7 @@ class TropomiProcessedImage(Resource):
             return 'Invalid date format', 400
 
         d = datetime.datetime.now()
-        print(args)
+        date = date + datetime.timedelta(days=1)
         date_start = date - datetime.timedelta(days=args["range_daily_images"])
         if date_start.year < 2021:
             date_start = d.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
