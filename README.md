@@ -8,12 +8,11 @@ MSc Thesis Executive Summary: https://bit.ly/3oKJZj2
 
 The Arctic area is vital to Europe for geopolitical, economic, security, and environmental reasons. New economic possibilities are developing as a result of the rapid decline in ice cover, such as new trade routes and access to natural resources. Indeed, as the Arctic becomes more accessible, rivalry for control of the region grows. For this reason, there is a growing demand for Europe to increase its situational awareness in the region. The objective of ARCOS is to design and implement a platform system, services, and products in support of superior monitoring of the Arctic Region. ARCOS project defines three different scales and with different levels of user interaction, and the time span in which the thesis was conducted falls within the definition of ARCOS Level 1. That is, the integration of space data sources for the observation of abnormal behaviors with automatic analytics extraction and AI techniques. Our thesis focuses on the development of a methodology for monitoring established in-land human activities using pollution satellite data. Copernicus Sentinel-5P (TROPOMI) is the satellite data imagery source for remote pollution sensing on which the entire project is based. The image processing phase has taken a significant amount of effort since it was crucial to extract useful and correct information for pollution source identification and time-series analysis. Starting from the assumption that we do not know where human activities are in advance, we have developed a method for top-down detection of pollution sources in areas of interest. During our work, we have developed a Gaussian reconstruction of the emissions (GROTE) method to estimate the emissions by analyzing pollution. Once the data has been processed, we use the processed data to train a time-series machine learning method and generate data on expected pollution emissions for each identified location. Finally, our service can be integrated into the ARCOS project and raise an alert if the difference between the forecast value and the actual value exceeds the reference baseline for determining whether the pollution emissions value falls into the category of "usual" or "anomalous" behavior.
 
-## Outcomes
 
+## REST APIs
+The tool as per specifications, had to be embeddable with other services of Copernicus SEA (Support to EU External Actions) Security Service, for this reason has been designed as a RESTful service. To interact with our service, the user or whoever will be integrating our service within the vast ARCOS project would then simply need to call the API endpoints we expose. In order to let our service to bulk download and prepare daily images of the AOI and then retrieve data of the pollution values for each identified human activity and as well as an alerting.
 
-## APIs
-
-### Prepare
+### Prepare
 
 #### Operation
 POST /prepare
@@ -38,16 +37,16 @@ It is the first endpoint to call. This endpoint allows the system to download TR
 #### Body example
 ```yaml
 {
-	"lat": 71.264765,
-	"lng": 72.060155,
-	"date": "2021-08-29T00:00:00",
-	"product_type": "NO2",
-	"sentinel_hub_client_id": "SentinelHub-OAuth-client-id",
-	"sentinel_hub_client_secret": "SentinelHub-OAuth-client-secret",
-	"sensing_period": 375,
-	"sensing_start_hours": 0,
-	"sensing_range_hours": 24,
-	"peaks_sensing_period": 30
+"lat": 71.264765,
+"lng": 72.060155,
+"date": "2021-08-29T00:00:00",
+"product_type": "NO2",
+"sentinel_hub_client_id": "SentinelHub-OAuth-client-id",
+"sentinel_hub_client_secret": "SentinelHub-OAuth-client-secret",
+"sensing_period": 375,
+"sensing_start_hours": 0,
+"sensing_range_hours": 24,
+"peaks_sensing_period": 30
 }
 ```
 
@@ -83,13 +82,13 @@ This endpoint can only be called after the endpoint /prepare has been called and
 #### Body example
 ```yaml
 {
-	"lat": 71.264765,
-	"lng": 72.060155,
-	"date": "2021-08-29T00:00:00",
-	"product_type": "NO2",
-	"sensing_period": 375,
-	"peaks_sensing_period": 30,
-	"range_alerting": 10
+"lat": 71.264765,
+"lng": 72.060155,
+"date": "2021-08-29T00:00:00",
+"product_type": "NO2",
+"sensing_period": 375,
+"peaks_sensing_period": 30,
+"range_alerting": 10
 }
 ```
 
@@ -123,29 +122,29 @@ Status can assume the following values:
 #### Response Example
 ```yaml
 {
-	"1": {...},
-	"2": {...},
-	"3": {
-		"actual_value": {
-			"attenuation": 0.11512570982940673,
-			"peak": 75.44932489015221,
-			"volume": 2058.8888888888887
-	},
-		"forecasted_value": {
-			"attenuation": 0.06382749964024934,
-			"peak": 245.46203834214054,
-			"volume": 12081.653530801428
-	},
-	"other_information": {
-		"coordinates": [
-			70.97159059687324,
-			73.75148733924422
-		],
-		"date": "Fri, 27 Aug 2021 00:00:00 GMT",
-		"days_range": 10
-	},
-	"status": "YELLOW"
-	}
+"1": {...},
+"2": {...},
+"3": {
+	"actual_value": {
+		"attenuation": 0.11512570982940673,
+		"peak": 75.44932489015221,
+		"volume": 2058.8888888888887
+},
+	"forecasted_value": {
+		"attenuation": 0.06382749964024934,
+		"peak": 245.46203834214054,
+		"volume": 12081.653530801428
+},
+"other_information": {
+	"coordinates": [
+		70.97159059687324,
+		73.75148733924422
+	],
+	"date": "Fri, 27 Aug 2021 00:00:00 GMT",
+	"days_range": 10
+},
+"status": "YELLOW"
+}
 }
 ```
 
@@ -171,12 +170,12 @@ This endpoint can only be called after the endpoint /prepare has been called and
 #### Body example
 ```yaml
 {
-	"lat": 71.264765,
-	"lng": 72.060155,
-	"date": "2021-08-29T00:00:00",
-  "product_type": "NO2",
-	"range_daily_images": 10,
-	"peaks_sensing_period": 30
+"lat": 71.264765,
+"lng": 72.060155,
+"date": "2021-08-29T00:00:00",
+"product_type": "NO2",
+"range_daily_images": 10,
+"peaks_sensing_period": 30
 }
 ```
 
