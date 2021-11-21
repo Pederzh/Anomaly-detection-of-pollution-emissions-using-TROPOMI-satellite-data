@@ -125,25 +125,25 @@ Status can assume the following values:
 "1": {...},
 "2": {...},
 "3": {
-	"actual_value": {
-		"attenuation": 0.11512570982940673,
-		"peak": 75.44932489015221,
-		"volume": 2058.8888888888887
-},
-	"forecasted_value": {
-		"attenuation": 0.06382749964024934,
-		"peak": 245.46203834214054,
-		"volume": 12081.653530801428
-},
-"other_information": {
-	"coordinates": [
-		70.97159059687324,
-		73.75148733924422
-	],
-	"date": "Fri, 27 Aug 2021 00:00:00 GMT",
-	"days_range": 10
-},
-"status": "YELLOW"
+  "actual_value": {
+    "attenuation": 0.11512570982940673,
+    "peak": 75.44932489015221,
+    "volume": 2058.8888888888887
+  },
+  "forecasted_value": {
+    "attenuation": 0.06382749964024934,
+    "peak": 245.46203834214054,
+    "volume": 12081.653530801428
+  },
+  "other_information": {
+    "coordinates": [
+      70.97159059687324,
+      73.75148733924422
+    ],
+    "date": "Fri, 27 Aug 2021 00:00:00 GMT",
+    "days_range": 10
+  },
+  "status": "YELLOW"
 }
 }
 ```
