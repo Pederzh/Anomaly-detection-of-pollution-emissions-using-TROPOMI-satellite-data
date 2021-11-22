@@ -20,6 +20,7 @@ import scipy.stats as st
 import numpy as np
 from numpy import polyfit
 from PIL import Image
+import xgboost as xgb
 import statistics as stst
 from scipy.ndimage import median_filter, median, maximum_filter, gaussian_filter
 from skimage.filters import threshold_otsu
@@ -290,11 +291,9 @@ def random_forest_test(data_set_mean, target, day_range_prediction):
         else:
             df_array_test.append(data)
     df_train = pd.DataFrame(df_array_train)
-    print(df_train)
     df_train.dropna(subset = ["target"], inplace=True)
 
     df_test = pd.DataFrame(df_array_test)
-    print(df_test)
     df_test.dropna(subset=["target"], inplace=True)
 
     # splitting in target and parameters
@@ -308,12 +307,19 @@ def random_forest_test(data_set_mean, target, day_range_prediction):
     #x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.05, random_state = 2)
 
     # fitting the training data
-    rfe = RFE(RandomForestRegressor(n_estimators=100, random_state=1))
-    rfe_fit = rfe.fit(x_train, y_train)
+    rfe = RFE(RandomForestRegressor(n_estimators=10, random_state=5))
+    rfe.fit(x_train, y_train)
     y_prediction = rfe.predict(x_test)
     MSE = 0
+    pred = 0
+    act = 0
     for i in range(len(list(y_prediction))):
+        pred += list(y_prediction)[i]
+        act += list(y_test)[i]
         MSE += pow(list(y_prediction)[i] - list(y_test)[i], 2)
+    pred = pred / len(list(y_prediction))
+    act = act / len(list(y_prediction))
+    print(pred - act)
     return MSE
 
 
@@ -397,14 +403,81 @@ def linear_regression_test(data_set_mean, target, day_range_prediction):
     LR.fit(x_train, y_train)
     y_prediction = LR.predict(x_test)
     MSE = 0
+    pred = 0
+    act = 0
     for i in range(len(list(y_prediction))):
+        print(str(list(y_prediction)[i]) + " --> real: " + str(list(y_test)[i]))
+        pred += list(y_prediction)[i]
+        act += list(y_test)[i]
         MSE += pow(list(y_prediction)[i] - list(y_test)[i], 2)
+    pred = pred / len(list(y_prediction))
+    act = act / len(list(y_prediction))
+    print(pred - act)
     return MSE
 
 
 
 
+def XGB_test(data_set_mean, target, day_range_prediction):
+    df_array_train = []
+    df_array_test = []
+    for i in range(len(data_set_mean)):
 
+        datestr = data_set_mean[i]["date"]
+        datestr = datestr.split("-")
+        date = datetime.datetime.now()
+        date_final = date.replace(year=int(datestr[0]), month=int(datestr[1]), day=int(datestr[2]))
+        day_initial = date.replace(year=int(datestr[0]), month=1, day=1)
+        data = {
+            "target": data_set_mean[i]["parameters"][target],
+            "day_of_year": (date_final - day_initial).days
+        }
+        for j in range(10):
+            data["year_" + str(2020 + j)] = 0
+        for j in range(12):
+            data["month_" + str(j + 1)] = 0
+        for j in range(31):
+            data["day_" + str(j + 1)] = 0
+        for j in range(7):
+            data["day_of_week" + str(j)] = 0
+        data["year_" + str(date_final.year)] = 1
+        data["month_" + str(date_final.month)] = 1
+        data["day_" + str(date_final.day)] = 1
+        # print(data_set_mean[i]["date"].weekday())
+        data["day_of_week" + str(date_final.weekday())] = 1
+        if i < (len(data_set_mean) - day_range_prediction):
+            df_array_train.append(data)
+        else:
+            df_array_test.append(data)
+    df_train = pd.DataFrame(df_array_train)
+    df_train.dropna(subset=["target"], inplace=True)
+
+    df_test = pd.DataFrame(df_array_test)
+    df_test.dropna(subset=["target"], inplace=True)
+
+    # splitting in target and parameters
+    y_train = df_train["target"]
+    x_train = df_train.drop("target", axis=1)
+
+    y_test = df_test["target"]
+    x_test = df_test.drop("target", axis=1)
+
+    # fitting the training data
+    XGB = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.3, learning_rate = 0.1,
+                max_depth = 5, alpha = 10, n_estimators = 10)
+    XGB.fit(x_train, y_train)
+    y_prediction = XGB.predict(x_test)
+    MSE = 0
+    pred = 0
+    act = 0
+    for i in range(len(list(y_prediction))):
+        pred += list(y_prediction)[i]
+        act += list(y_test)[i]
+        MSE += pow(list(y_prediction)[i] - list(y_test)[i], 2)
+    pred = pred / len(list(y_prediction))
+    act = act / len(list(y_prediction))
+    print(pred - act)
+    return MSE
 
 
 
@@ -627,7 +700,8 @@ for i in range(len(data)):
 new_data = []
 date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
-date_end = date.replace(year=2021, month=10, day=15, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=5, day=15, hour=0, minute=0, second=0, microsecond=0)
+#[6138, 3597, 1171, 6585, 1419, 1664, 35713, 6000, 1121]
 for day_counter in range(int((date_end - date_start).days)):
     date = date_start + datetime.timedelta(days=day_counter)
     date_str = date.strftime("%Y-%m-%d")
@@ -643,11 +717,11 @@ for day_counter in range(int((date_end - date_start).days)):
             "parameters": old_data_set[date_str],
             "date": date_str
         })"""
-    """if date_str in test_set:
+    if date_str in test_set:
         new_data.append({
             "parameters": test_set[date_str]
-        })"""
-    if date_str not in data_set: # and date_str not in old_data_set: #and date_str not in test_set: #and date_str not in old_data_set:
+        })
+    if date_str not in data_set and date_str not in test_set: #and date_str not in old_data_set:
         new_data.append({
             "parameters": [np.nan, np.nan, np.nan],
             "date": date_str
@@ -662,11 +736,11 @@ old_data_set_mean = get_parameters_mean(old_data_set, 10, "cleaned_mean")
 #SARIMA_test(new_data, 2, [0, 1, 3], [1, 1, 1, 4])
 #decomposition_test(new_data, 2, [1, 1, 0], [0, 0, 0, 0])
 #polynomial_regression_test(data_set_mean, 2, 7)
-MSE = random_forest_test(new_data, 2, 10)
+#MSE = random_forest_test(new_data, 2, 10)
 
-#MSE = linear_regression_test(new_data, 2, 5)
-print(MSE)
-
+MSE = XGB_test(new_data, 2, 10)
+#print(MSE)
+"""
 # random forest
 # 22503333 + 1900224098 + 13585669 + 4437918 + 50123599
 random_f = pow((22503333 + 1900224098 + 13585669 + 4437918 + 50123599 + 47444089752)/35, 1/2)
@@ -674,7 +748,7 @@ random_f = pow((22503333 + 1900224098 + 13585669 + 4437918 + 50123599 + 47444089
 # 11598878 + 1660596509 + 453114053 + 1280070904 + 816598364
 linear_r = pow((11598878 + 1660596509 + 453114053 + 1280070904 + 816598364)/25, 1/2)
 print("random forest " + str(random_f))
-print("linear regr " + str(linear_r))
+print("linear regr " + str(linear_r))"""
 
 # SARIMAX
 # LSTM
@@ -784,3 +858,13 @@ new
 [9752.129003693999, 10304.476191207143, 3697.0667644887494]
 [46638.0, 12231.0, 8778.5]
 """
+
+#[3887, 3337, 1536, 10443, 9290, 12228, 11923, 30000]
+#[34000, 40, 9757, 6964, 29200]
+#[6138, 3597, 1171, 6585, 1419, 1664, 35713, 6000, 1121]
+tmp = [6138, 3597, 1171, 6585, 1419, 1664, 35713, 6000, 1121]
+tot = 0
+for i in range(len(tmp)):
+    tot += tmp[i]*tmp[i]
+tot = tot/len(tmp)
+print(math.sqrt(tot))

@@ -829,7 +829,7 @@ def calculate_means(product_type, location_name, date_start, date_end):
         my_path = Path(directory_path)
         if my_path.is_dir():
             data_set = get_json_content_w_name(directory_path, "mean")
-            data_set = maximum_filter(data_set, 5)
+            data_set = maximum_filter(data_set, )
             tot += 1
             for y in range(len(data_set)):
                 if len(mean_set) < len(data_set): mean_set.append([])

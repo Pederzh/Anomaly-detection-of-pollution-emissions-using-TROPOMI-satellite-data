@@ -19,6 +19,7 @@ import scipy.fftpack
 import scipy.signal
 import scipy.stats as st
 import numpy as np
+import xgboost as xgb
 from numpy import polyfit
 from PIL import Image
 import statistics as stst
@@ -312,7 +313,7 @@ def get_bbox_coordinates_from_center(coordinates, distance):
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-def SARIMA_test(data_set_mean, target, d_order, s_order, day_range_prediction):
+def SARIMA_test(data_set_mean, target, d_order, s_order, day_range_prediction, tot_range_days):
 
     y = []
     x = []
@@ -332,8 +333,11 @@ def SARIMA_test(data_set_mean, target, d_order, s_order, day_range_prediction):
         else:
             if len(yyy) < len_train:
                 yyy.append(y[j])
-    model = SARIMAX(yy, order=(d_order[0], d_order[1], d_order[2]),
-                    seasonal_order=(s_order[0], s_order[1], s_order[2], s_order[3]))
+    if (tot_range_days+1-day_range_prediction) > 365:
+        model = SARIMAX(yy, order=(d_order[0], d_order[1], d_order[2]),
+                        seasonal_order=(s_order[0], s_order[1], s_order[2], 365))
+    else:
+        model = SARIMAX(yy, order=(d_order[0], d_order[1], d_order[2]))
     model_fit = model.fit(disp=False)
     # make prediction
     yhat = model_fit.predict(len(yy), len(yy) + day_range_prediction - 1)
@@ -341,7 +345,6 @@ def SARIMA_test(data_set_mean, target, d_order, s_order, day_range_prediction):
         "prediction": yhat,
         "actual_value": yyy
     }
-
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
@@ -394,7 +397,7 @@ def get_mean_from_RMSE(pred, act, max_error_position):
 
 def main_alerter(product_type, location_name, date_start, date_end, data_range, peak_id, parameter, day_range_prediction):
 
-    directory_path = "./Data/" + product_type + "/" + location_name + "/range_data/"
+    directory_path = "../Data/" + product_type + "/" + location_name + "/range_data/"
     directory_path = directory_path + str(data_range) + "/peaks/"
     peaks = get_json_content_w_name(directory_path, "peaks")
     if peaks == None: return {"error": "peaks file not found, please reprocess"}
@@ -405,28 +408,31 @@ def main_alerter(product_type, location_name, date_start, date_end, data_range, 
             image_ccs = peak["point"]
     if image_ccs == None: return None
 
-    map_ccs = get_json_content_w_name("./Data/" + product_type + "/" + location_name + "/", "coordinates")
+    map_ccs = get_json_content_w_name("../Data/" + product_type + "/" + location_name + "/", "coordinates")
 
-    directory_path = "./Data/" + product_type + "/" + location_name +  "/range_data/"
+    directory_path = "../Data/" + product_type + "/" + location_name +  "/range_data/"
     directory_path = directory_path + str(data_range) + "/gaussian_shapes/peak_" + str(peak_id) + "/"
     data_set = get_json_content_w_name(directory_path , "parameters")
 
     # DATA PREPARATION
     new_data = []
+    tot_range_days = 0
     for day_counter in range(int((date_end - date_start).days)):
         date = date_start + datetime.timedelta(days=day_counter)
         date_str = date.strftime("%Y-%m-%d")
-        if date_str in data_set: new_data.append({
-            "parameters": data_set[date_str],
-            "date": date_str
-        })
+        if date_str in data_set:
+            new_data.append({
+                "parameters": data_set[date_str],
+                "date": date_str
+            })
+            tot_range_days = day_counter
         else: new_data.append({
             "parameters": [np.nan, np.nan, np.nan],
             "date": date_str
         })
 
     # PREDICTION
-    pred = SARIMA_test(new_data, parameter, [0, 1, 3], [1, 1, 1, 4], day_range_prediction)
+    pred = SARIMA_test(new_data, parameter, [0, 1, 3], [1, 1, 1, 4], day_range_prediction, tot_range_days)
 
     # ALARMING
     max_difference = 20000
@@ -496,5 +502,58 @@ def main_alerter_sabetta():
 
 def main_alerter_default(location_name, date_start, date_end, peak_id):
 
-    return main_alerter("NO2", location_name, date_start, date_end, 30, peak_id, 2, 10)
+    return main_alerter("NO2", location_name, date_start, date_end, 30, peak_id, 2, 30)
+
+
+
+
+
+
+
+
+
+
+# MAIN TMP
+
+
+
+date = datetime.datetime.now()
+month_start = 4
+date_start = date.replace(year=2021, month=3, day=1, hour=0, minute=0, second=0, microsecond=0)
+date_end = date.replace(year=2021, month=month_start, day=25, hour=0, minute=0, second=0, microsecond=0)
+date_pred = date.replace(year=2021, month=month_start, day=1, hour=0, minute=0, second=0, microsecond=0)
+preds = []
+acts = []
+errs = []
+for i in range(180):
+    if i % 1 == 0:
+        date_pred = date_end + datetime.timedelta(days=i)
+        res = main_alerter_default("Sabetta Port", date_start, date_pred, 2)
+        preds.append(res["forecasted_value"]["volume"])
+        acts.append(res["actual_value"]["volume"])
+        errs.append(abs(res["forecasted_value"]["volume"] - res["actual_value"]["volume"]))
+
+print(preds)
+print(acts)
+
+#plt.scatter(x, y)
+plt.plot(preds)
+plt.show()
+plt.plot(acts)
+plt.show()
+plt.plot(errs)
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
 

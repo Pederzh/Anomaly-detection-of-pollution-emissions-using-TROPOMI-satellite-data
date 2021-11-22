@@ -899,7 +899,7 @@ def get_gaussian_parameters(data_set, plumes, plume_id):
     area = 0
     max_value = 0
     prop = 0
-
+    print_image_given_matrix(data_set)
     for y in range(len(data_set)):
         for x in range(len(data_set[y])):
             if plumes[y][x] != None:
@@ -1000,7 +1000,7 @@ def get_single_plume(data_set, plumes, point_id):
                     single_plume[y][x] = 0
     #print_image_given_matrix(single_plume)
     single_plume = get_interpolated_image(list_interp, single_plume)
-    #print_image_given_matrix(single_plume)
+    print_image_given_matrix(single_plume)
     plume = []
     for y in range(len(single_plume)):
         plume.append([])
@@ -1258,13 +1258,13 @@ def main_reconstructor_default(location_name, date_start, date_end):
 
 
 
-"""sys.setrecursionlimit(10000)
+sys.setrecursionlimit(10000)
 directory_path = "../data/NO2/Sabetta Port/"
 data_set = get_json_content_w_name(directory_path+"images/2021/08/12/balanced/", "mean")
 data_set = get_lowed_image(data_set, 10)
 print_image_given_matrix(data_set)
 end_set = get_image_gaussian_plumes(data_set, [{"id": 3, "point": [65, 80]}], "image")
-print_image_given_matrix(end_set["3"])
+"""print_image_given_matrix(end_set["3"])
 vol = 0
 for y in end_set["3"]:
     for x in y:
