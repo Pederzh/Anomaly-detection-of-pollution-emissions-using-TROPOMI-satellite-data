@@ -18,7 +18,7 @@ from tkinter import ttk, Tk, Button, Frame, Canvas, BOTH, LEFT, VERTICAL, RIGHT,
 def main_downloader(date_start, date_end, start_h, range_h, coordinates, location_name, product_type,
                     client_id, client_secret):
 
-    # Create a sessionv
+    # Create a session
     client = BackendApplicationClient(client_id=client_id)
     oauth = OAuth2Session(client=client)
 
@@ -28,10 +28,23 @@ def main_downloader(date_start, date_end, start_h, range_h, coordinates, locatio
 
 
 
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    #             POST REQUEST FUNCTION
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+
+
+
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #
+    #                           POST REQUEST FUNCTION TO TROPOMI
+    #
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    # bbox: array of coordinates of type [Ay, Ax, By, Bx] where A=down_lef and B=up_right
+    # date_from_str: string initial date for scan retrieval (yyyy-mm-dd)
+    # date_to_str: string end date for scan retrieval (yyyy-mm-dd)
+    # s_product: "NO2" or "CH4" or "CO"
+    # dimension: object of type {"width": A, "height": B}
     def get_response (bbox, date_from_str, date_to_str, s_product, dimension):
 
         if s_product == "NO2":
@@ -171,17 +184,6 @@ def main_downloader(date_start, date_end, start_h, range_h, coordinates, locatio
         bbox_coordinates.append(get_new_latitude(lat, lon, distance))
         return bbox_coordinates
 
-
-
-
-
-
-
-
-
-
-
-
     def get_value_from_rgb( rgb):
         """
         [minVal, [0, 0, 0.5]],
@@ -248,22 +250,6 @@ def main_downloader(date_start, date_end, start_h, range_h, coordinates, locatio
         with open(directory_path + "data.json", 'w') as outfile:
             json.dump(json_file, outfile)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def save_image(image, product_type, location_name):
         directory_path = "./data/" + product_type + "/" + location_name + "/images/" \
                              + image["date"].strftime("%Y") + "/" + image["date"].strftime("%m") \
@@ -271,6 +257,17 @@ def main_downloader(date_start, date_end, start_h, range_h, coordinates, locatio
         file_name = str(image["time"])
         Path(directory_path).mkdir(parents=True, exist_ok=True)
         image["image"].save(directory_path + file_name + ".png", format="png")
+
+
+
+
+
+
+
+
+
+
+
 
 
     def get_hourly_images(date_start, start_h, range_h, coordinates, location_name, product_type):

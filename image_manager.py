@@ -19,17 +19,20 @@ import os, sys
 from pathlib import Path
 from scipy.ndimage import median_filter, median, maximum_filter, gaussian_filter
 
-# Your client credentials
-client_id = '982de4f4-dade-4f98-9b49-4374cd896bb6'
-client_secret = '%p/,0Yrd&/mO%cdudUsby[>@]MB|2<rf1<NnXkZr'
 
-# Create a sessionv
-client = BackendApplicationClient(client_id=client_id)
-oauth = OAuth2Session(client=client)
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+#                           CODE TO CREATE GEOTIFF IMAGES
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# Get token for the session
-token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/token',
-                          client_id=client_id, client_secret=client_secret)
+
+
+
+
+
 
 
 def stat_to_image(data, key, precision):
@@ -205,6 +208,20 @@ def save_image(directory_path, file_name, rgbt_matrix):
     image = Image.fromarray(array)
     image.save(directory_path + file_name + ".png", format="png")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #              PARAMETERS DEFINITION
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -221,7 +238,6 @@ locations_coords = [
     }
 ]
 product_types = ["CO", "NO2", "CH4", "SO2"]
-
 date = datetime.datetime.now()
 date_start = date.replace(year=2021, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 date_end = date.replace(year=2021, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -252,29 +268,8 @@ for y in range(len(data_set)):
     for x in range(len(data_set[y])):
         data_set[y][x] += data_set_2[y][x]"""
 
-
-
-rgba_data_set = []
-#data_set[4][73] = 0
-for y in range(len(data_set)):
-    for x in range(len(data_set[y])):
-        data_set[y][x] = data_set[y][x] * 1
-for y in range(len(data_set)):
-    rgba_data_set.append([])
-    for x in data_set[y]:
-        rgba_data_set[y].append(get_standard_rgb_values(x))
-directory_write = "../steps/"
+directory_write = "../"
 file_write = "tmp"
-
-#save_image(directory_write, file_write, rgba_data_set)
-
-"""directory_path = "../Data/NO2/Sabetta Port/range_data/30/"
-file_name = "data"
-data_set = get_json_content_w_name(directory_path, file_name)["2021-04-01"]
-
-directory_write = "../Thesis images/0/clean plume/"
-file_write = "2021-04-29_3"
-"""
 
 
 
@@ -318,8 +313,6 @@ yres = (ymax - ymin) / float(ny)
 geotransform = (xmin, xres, 0, ymax, 0, -yres)
 
 info_name_write = location_name.strip() + "_" + product_type + "_"
-file_name_write = info_name_write + date_start.strftime("%Y-%m-%d") + "_" + date_end.strftime("%Y-%m-%d") + "_" + key + "_GEOTIF"
-directory_path_write = "./data/" + location_name + "/" + product_type + "/geotiff/"
 directory_path_write = directory_write
 file_name_write = file_write
 

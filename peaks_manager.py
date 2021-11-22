@@ -29,7 +29,6 @@ from numpy import array
 
 
 
-#min_peak_height = 70
 min_peak_height = 33.3
 min_peaks_distance = 0.3
 min_shape_border = 0.1
@@ -1041,6 +1040,3 @@ def main_peak_finder_sabetta():
 
 def main_peak_finder_default(product_type, location_name, date_start, date_end):
     main_peak_finder("NO2", location_name, date_start, date_end, 30)
-
-
-#main_peak_finder_sabetta()
